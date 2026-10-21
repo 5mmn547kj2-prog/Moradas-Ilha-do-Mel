@@ -2,21 +2,21 @@
 const $ = id => document.getElementById(id);
 const rnd = (a, b) => a + Math.random() * (b - a);
 const R = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true, powerPreference: 'high-performance' });
-R.setPixelRatio(Math.min(devicePixelRatio, 2));
+R.setPixelRatio(Math.min(devicePixelRatio, 2.25));
 R.outputEncoding = THREE.sRGBEncoding;
 R.toneMapping = THREE.ACESFilmicToneMapping;
-R.toneMappingExposure = 1.12;
+R.toneMappingExposure = 1.0; R.physicallyCorrectLights = true;
 R.shadowMap.enabled = true;
 R.shadowMap.type = THREE.PCFSoftShadowMap;
 const S = new THREE.Scene();
-S.background = new THREE.Color(0x333b43);
-S.fog = new THREE.Fog(0x333b43, 22, 105);
+S.background = new THREE.Color(0x59636b);
+S.fog = new THREE.Fog(0x59636b, 42, 145);
 const cam = new THREE.PerspectiveCamera(75, 1, 0.05, 100);
 cam.rotation.order = 'YXZ'; S.add(cam);
 function resize() { R.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
-S.add(new THREE.HemisphereLight(0xdde9ff, 0x444b55, 1.05));
-const sun = new THREE.DirectionalLight(0xffe6c2, 1.6);
+S.add(new THREE.HemisphereLight(0xdde8f1, 0x343a32, 1.25));
+const sun = new THREE.DirectionalLight(0xffe8cf, 2.1);
 sun.position.set(-18, 28, -10);
 sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
@@ -132,40 +132,177 @@ const P = { x: 0, y: 0, z: 31, vy: 0, yaw: 0, pitch: 0, hp: 100, w: 1, cd: 0, rl
 WP.forEach(w => { w.ammo = w.mag; w.reserve = w.res; });
 function bx(w, h, d, col, x, y, z, p) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: col, roughness: 0.62, metalness: 0.22 })); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; p.add(m); return m; }
 const mzTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 2, 32, 32, 30); g.addColorStop(0, '#fff'); g.addColorStop(0.3, '#ffd060'); g.addColorStop(1, 'rgba(255,120,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+// Detailed first-person weapon meshes. Local forward is -Z; layered parts and
+// contrasting roughness make the silhouettes read much closer to real firearms.
+const gunM = {
+  steel: new THREE.MeshStandardMaterial({ color: 0x252a2d, roughness: 0.28, metalness: 0.82 }),
+  dark: new THREE.MeshStandardMaterial({ color: 0x101315, roughness: 0.58, metalness: 0.32 }),
+  polymer: new THREE.MeshStandardMaterial({ color: 0x202522, roughness: 0.88, metalness: 0.02 }),
+  rubber: new THREE.MeshStandardMaterial({ color: 0x111211, roughness: 0.96, metalness: 0.0 }),
+  brass: new THREE.MeshStandardMaterial({ color: 0x8b7650, roughness: 0.36, metalness: 0.72 }),
+  glass: new THREE.MeshStandardMaterial({ color: 0x182b30, roughness: 0.12, metalness: 0.55 }),
+  skin: new THREE.MeshStandardMaterial({ color: 0xb98562, roughness: 0.9 })
+};
+function gunBox(p, w,h,d, mat, x,y,z, bevel=0) {
+  let geo = new THREE.BoxGeometry(w,h,d);
+  const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; p.add(m); return m;
+}
+function gunCyl(p, r1,r2,len,mat,x,y,z,segments=16) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,len,segments),mat);
+  m.rotation.x=Math.PI/2; m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; p.add(m); return m;
+}
+function sight(p,x,y,z) {
+  gunBox(p,.035,.055,.07,gunM.dark,x,y,z);
+  gunBox(p,.012,.026,.015,gunM.steel,x,y+.038,z);
+}
 function mkGun(i) {
-  const g = new THREE.Group(), D = 0x1c1c1e, G = 0x4a4d50, SK = 0xc99a74, SL = 0x2c3e60; let mz;
-  if (i === 0) { bx(.05, .07, .3, G, 0, 0, -.05, g); bx(.045, .05, .22, D, 0, -.05, 0, g); bx(.04, .11, .06, D, 0, -.1, .1, g).rotation.x = .2; mz = -.22; }
-  else if (i === 1) { bx(.06, .09, .45, D, 0, 0, 0, g); bx(.025, .025, .35, G, 0, .01, -.4, g); bx(.05, .06, .3, D, 0, -.01, -.3, g); bx(.05, .08, .22, D, 0, -.02, .33, g); bx(.04, .15, .07, G, 0, -.11, -.02, g).rotation.x = .15; bx(.03, .04, .14, D, 0, .065, .05, g); bx(.04, .1, .06, D, 0, -.09, .15, g).rotation.x = .3; mz = -.6; }
-  else { bx(.06, .09, .7, 0x2f3d2a, 0, 0, 0, g); bx(.025, .025, .55, D, 0, .01, -.6, g); bx(.05, .05, .3, D, 0, .08, -.05, g); bx(.07, .07, .04, D, 0, .08, .1, g); bx(.07, .07, .04, D, 0, .08, -.2, g); bx(.05, .1, .25, 0x2f3d2a, 0, -.03, .45, g); mz = -.9; }
-  bx(.08, .08, .5, SL, .08, -.17, .3, g).rotation.x = -.15; bx(.07, .07, .1, SK, .05, -.1, .08, g);
-  if (i > 0) { bx(.08, .08, .5, SL, -.14, -.2, -.05, g).rotation.set(-.1, .3, 0); bx(.07, .07, .1, SK, -.02, -.06, -.28, g); }
-  const f = new THREE.Mesh(new THREE.PlaneGeometry(.3, .3), new THREE.MeshBasicMaterial({ map: mzTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-  f.position.set(0, 0.01, mz); f.visible = false; g.add(f); g.userData.mz = f; g.visible = false; cam.add(g); return g;
+  const g = new THREE.Group(); let mz;
+  if (i === 0) { // compact service pistol: slide, frame, barrel, sights, trigger and magazine
+    gunBox(g,.105,.105,.36,gunM.steel,0,.025,-.12);
+    gunBox(g,.082,.045,.20,gunM.dark,0,.077,-.17);
+    gunCyl(g,.022,.022,.16,gunM.dark,0,.035,-.36,16);
+    gunBox(g,.09,.075,.22,gunM.polymer,0,-.045,.045);
+    gunBox(g,.075,.19,.095,gunM.rubber,0,-.15,.13).rotation.x=-.16;
+    gunBox(g,.082,.025,.06,gunM.dark,0,-.255,.16);
+    gunBox(g,.024,.09,.035,gunM.steel,0,-.1,-.035).rotation.z=-.12;
+    gunBox(g,.035,.025,.045,gunM.dark,0,.092,-.08); sight(g,0,.093,-.31);
+    for(let k=0;k<5;k++) gunBox(g,.108,.009,.018,gunM.dark,0,.068,-.04-k*.045);
+    gunBox(g,.045,.03,.04,gunM.dark,0,.088,-.31); mz=-.43;
+  } else if (i === 1) { // M4-style carbine with carry handle/optic, handguard, magazine and stock
+    gunBox(g,.12,.12,.38,gunM.dark,0,.005,.02);
+    gunBox(g,.105,.10,.27,gunM.steel,0,.018,-.24);
+    gunCyl(g,.023,.023,.57,gunM.steel,0,.025,-.60,18);
+    gunCyl(g,.032,.032,.10,gunM.dark,0,.025,-.91,18);
+    gunBox(g,.105,.095,.38,gunM.polymer,0,.005,-.54);
+    for(let k=0;k<7;k++) gunBox(g,.112,.012,.022,k%2?gunM.dark:gunM.steel,0,.055,-.38-k*.047);
+    gunBox(g,.082,.16,.25,gunM.dark,0,-.105,.19).rotation.x=-.12;
+    gunBox(g,.095,.12,.18,gunM.polymer,0,-.19,.33).rotation.x=-.18;
+    gunBox(g,.085,.19,.10,gunM.rubber,0,-.105,.48).rotation.x=-.10;
+    gunBox(g,.055,.20,.035,gunM.dark,0,-.12,.51);
+    gunBox(g,.10,.035,.17,gunM.dark,0,.12,-.10);
+    gunBox(g,.06,.045,.09,gunM.steel,0,.15,-.10);
+    sight(g,0,.17,-.18); sight(g,0,.09,-.80);
+    gunBox(g,.035,.04,.16,gunM.dark,0,.085,-.48);
+    gunBox(g,.06,.055,.09,gunM.dark,0,-.025,.00);
+    gunBox(g,.045,.035,.045,gunM.steel,.03,-.05,.07);
+    // ribbed pistol grip and trigger guard
+    gunBox(g,.068,.16,.11,gunM.rubber,.005,-.13,.11).rotation.x=-.2;
+    gunBox(g,.012,.055,.07,gunM.steel,0,-.08,-.005);
+    mz=-.98;
+  } else { // long precision rifle with scope, bipod, heavy barrel and cheek rest
+    gunBox(g,.12,.13,.54,gunM.polymer,0,.0,.16);
+    gunBox(g,.105,.09,.40,gunM.steel,0,.025,-.20);
+    gunCyl(g,.025,.025,.78,gunM.steel,0,.03,-.78,20);
+    gunCyl(g,.04,.04,.08,gunM.dark,0,.03,-1.19,20);
+    gunBox(g,.085,.11,.31,gunM.polymer,0,-.045,.47).rotation.x=-.08;
+    gunBox(g,.09,.08,.14,gunM.rubber,0,-.075,.63);
+    gunBox(g,.11,.04,.16,gunM.dark,0,.085,-.18);
+    // scope tube and two mounting rings
+    gunCyl(g,.052,.052,.34,gunM.dark,0,.17,-.26,20);
+    gunCyl(g,.065,.065,.045,gunM.steel,0,.17,-.10,20);
+    gunCyl(g,.06,.06,.045,gunM.steel,0,.17,-.42,20);
+    gunCyl(g,.045,.045,.025,gunM.glass,0,.17,-.455,20);
+    gunCyl(g,.045,.045,.025,gunM.glass,0,.17,-.075,20);
+    gunBox(g,.10,.025,.08,gunM.dark,0,.12,-.26);
+    gunBox(g,.07,.19,.12,gunM.rubber,0,-.15,.19).rotation.x=-.18;
+    gunBox(g,.11,.07,.04,gunM.dark,0,-.23,.19);
+    // folded bipod legs
+    const leg1=gunBox(g,.018,.23,.025,gunM.steel,-.07,-.12,-.66); leg1.rotation.z=-.16;
+    const leg2=gunBox(g,.018,.23,.025,gunM.steel,.07,-.12,-.66); leg2.rotation.z=.16;
+    sight(g,0,.10,-.90); mz=-1.24;
+  }
+  // Supporting hands: forearm cuffs, gloves and fingers, positioned around grip.
+  gunBox(g,.115,.13,.22,gunM.skin,.105,-.20,.27).rotation.x=-.22;
+  gunBox(g,.095,.09,.12,gunM.rubber,.105,-.17,.18);
+  for(let k=0;k<3;k++) gunBox(g,.022,.025,.085,gunM.rubber,.075+k*.026,-.205,.105);
+  if(i>0){
+    gunBox(g,.12,.12,.20,gunM.skin,-.12,-.20,-.42).rotation.x=-.15;
+    gunBox(g,.10,.085,.12,gunM.rubber,-.12,-.17,-.50);
+    for(let k=0;k<3;k++) gunBox(g,.022,.025,.08,gunM.rubber,-.15+k*.026,-.205,-.54);
+  }
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(.3,.3),new THREE.MeshBasicMaterial({map:mzTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
+  f.position.set(0,.01,mz); f.visible=false; g.add(f); g.userData.mz=f; g.visible=false; cam.add(g); return g;
 }
 const guns = [0, 1, 2].map(mkGun);
 const flash = new THREE.PointLight(0xffcc66, 0, 8); flash.position.set(0.2, -0.1, -1); cam.add(flash);
 
 // ---------- Characters ----------
+// More anatomical low-poly characters: tapered torso, rounded joints, boots,
+// layered tactical vest, pouches, helmet, webbing and a visible held rifle.
+const charM = {};
+function cm(color, roughness=.82, metalness=0) { const key=color+'_'+roughness+'_'+metalness; return charM[key] || (charM[key]=new THREE.MeshStandardMaterial({color,roughness,metalness})); }
+function limbMesh(parent, geo, mat, x,y,z, parts, extra={}) {
+  const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; Object.assign(m.userData,extra); parent.add(m); parts.push(m); return m;
+}
 function human(c) {
-  const g = new THREE.Group(), parts = [];
-  const mk = (w, h, d, col, x, y, z) => { const geo = new THREE.BoxGeometry(w, h, d); geo.translate(0, -h / 2, 0); const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.72, metalness: 0.03 })); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; g.add(m); parts.push(m); return m; };
-  const legL = mk(.23, .8, .25, c.pants, -.14, .8, 0), legR = mk(.23, .8, .25, c.pants, .14, .8, 0);
-  mk(.58, .66, .34, c.shirt, 0, 1.42, 0);
-  const armL = mk(.14, .6, .16, c.shirt, -.34, 1.4, 0), armR = mk(.14, .6, .16, c.shirt, .34, 1.4, 0);
-  const head = mk(.34, .34, .34, c.skin, 0, 1.72, 0); head.userData.head = true;
-  return { g, parts, legL, legR, armL, armR };
+  const g=new THREE.Group(), parts=[];
+  const skin=cm(c.skin,.9), shirt=cm(c.shirt,.95), pants=cm(c.pants,.94), boot=cm(0x171918,.82,.08), vest=cm(c.vest||0x343a31,.92), web=cm(0x171b17,.8), metal=cm(0x25292a,.35,.72), helmet=cm(c.helmet||0x333b31,.72,.08), glove=cm(0x20231f,.9);
+  const sph=(x,y,z,sx,sy,sz,mat,extra={})=>limbMesh(g,new THREE.SphereGeometry(1,12,10),mat,x,y,z,parts,extra).scale.set(sx,sy,sz);
+  const cyl=(x,y,z,rt,rb,h,mat,extra={})=>limbMesh(g,new THREE.CylinderGeometry(rt,rb,h,10),mat,x,y,z,parts,extra);
+  // Legs pivot at the hips for a natural running swing.
+  const legL=new THREE.Group(), legR=new THREE.Group(); legL.position.set(-.14,.93,0); legR.position.set(.14,.93,0); g.add(legL,legR);
+  const makeLeg=(pivot)=>{
+    const upper=new THREE.Mesh(new THREE.CylinderGeometry(.105,.145,.47,12),pants); upper.position.y=-.24; upper.castShadow=true; pivot.add(upper); parts.push(upper);
+    const knee=new THREE.Mesh(new THREE.SphereGeometry(.105,12,10),pants); knee.position.set(0,-.48,.012); knee.castShadow=true; pivot.add(knee); parts.push(knee);
+    const lower=new THREE.Mesh(new THREE.CylinderGeometry(.075,.10,.39,12),pants); lower.position.set(0,-.68,.012); lower.castShadow=true; pivot.add(lower); parts.push(lower);
+    const cuff=new THREE.Mesh(new THREE.CylinderGeometry(.078,.078,.055,12),web); cuff.position.set(0,-.84,.012); pivot.add(cuff); parts.push(cuff);
+    const shoe=new THREE.Mesh(new THREE.BoxGeometry(.18,.12,.29),boot); shoe.position.set(0,-.91,-.045); shoe.castShadow=true; pivot.add(shoe); parts.push(shoe);
+  };
+  makeLeg(legL); makeLeg(legR);
+  // pelvis, torso and shoulder armor
+  sph(0,.91,0,.255,.18,.17,pants);
+  const torso=limbMesh(g,new THREE.CylinderGeometry(.25,.19,.61,12,1),shirt,0,1.34,0,parts); torso.scale.set(1.12,1,0.72);
+  sph(0,1.45,0,.30,.22,.18,vest);
+  // plate carrier front plate, lower belt and modular pouches
+  const plate=limbMesh(g,new THREE.BoxGeometry(.34,.38,.07),cm(c.plate||0x42463b,.88),0,1.40,-.145,parts); plate.rotation.x=-.05;
+  limbMesh(g,new THREE.BoxGeometry(.46,.075,.21),web,0,1.10,0,parts);
+  for(let side of [-1,1]){
+    limbMesh(g,new THREE.BoxGeometry(.105,.13,.09),cm(c.pouch||0x282d27,.9),side*.16,1.17,-.17,parts);
+    limbMesh(g,new THREE.BoxGeometry(.11,.16,.08),vest,side*.23,1.36,-.08,parts);
+    // articulated arms with upper sleeves, forearms, gloves
+    const shoulder=sph(side*.335,1.48,0,.13,.15,.14,shirt);
+    const upper=limbMesh(g,new THREE.CylinderGeometry(.085,.105,.31,10),shirt,side*.36,1.30,-.025,parts); upper.rotation.z=side*.13;
+    sph(side*.385,1.13,-.07,.09,.095,.10,shirt);
+    const fore=limbMesh(g,new THREE.CylinderGeometry(.065,.085,.29,10),shirt,side*.36,1.00,-.12,parts); fore.rotation.x=-.38; fore.rotation.z=-side*.10;
+    sph(side*.36,.85,-.18,.075,.07,.08,glove);
+    // elbow pad and shoulder seam
+    sph(side*.39,1.20,-.07,.09,.075,.075,web);
+  }
+  // neck, face, ears, nose, eyes, helmet and chin strap
+  cyl(0,1.67,0,.075,.08,.12,skin);
+  const head=sph(0,1.82,-.005,.145,.19,.135,skin,{head:true});
+  sph(0,1.94,.0,.16,.105,.15,helmet);
+  sph(0,1.88,-.112,.155,.035,.055,cm(0x222820,.78)); // helmet brim
+  sph(-.145,1.82,0,.025,.055,.04,skin); sph(.145,1.82,0,.025,.055,.04,skin);
+  // face features face toward local -Z
+  sph(-.052,1.84,-.126,.018,.014,.009,cm(0x181715)); sph(.052,1.84,-.126,.018,.014,.009,cm(0x181715));
+  sph(0,1.80,-.139,.025,.03,.018,skin);
+  // shoulder straps and small radio/utility kit
+  for(const side of [-1,1]) { const strap=limbMesh(g,new THREE.BoxGeometry(.045,.42,.025),web,side*.13,1.43,-.155,parts); strap.rotation.z=side*.18; }
+  limbMesh(g,new THREE.BoxGeometry(.105,.17,.10),cm(0x202622,.9),-.205,1.42,.06,parts);
+  // compact rifle silhouette carried in front, muzzle points along -Z
+  const rifle=new THREE.Group(); g.add(rifle); rifle.position.set(.12,1.16,-.27); rifle.rotation.x=-.10;
+  limbMesh(rifle,new THREE.BoxGeometry(.075,.075,.30),metal,0,0,-.12,parts);
+  limbMesh(rifle,new THREE.CylinderGeometry(.014,.014,.34,10),metal,0,.012,-.39,parts).rotation.x=Math.PI/2;
+  limbMesh(rifle,new THREE.BoxGeometry(.075,.12,.12),web,0,-.07,.04,parts);
+  limbMesh(rifle,new THREE.BoxGeometry(.055,.13,.07),web,0,-.12,-.06,parts).rotation.x=-.18;
+  const all=[...g.children];
+  return {g,parts,legL,legR,armL:null,armR:null,head};
 }
 const hostages = [];
 [[-6, 36], [-2, 37], [2, 36], [6, 37]].forEach(([x, z], i) => {
-  const h = human({ shirt: 0xd8d8d0, pants: 0x4a5a7a, skin: 0xd9b08c }); h.armL.rotation.x = h.armR.rotation.x = -0.7;
+  const h = human({ shirt: 0xb8b7aa, pants: 0x48546a, skin: 0xd0a27f, vest:0x8b8b7b, helmet:0x6d6657 });
   h.g.position.set(x, 0, z); h.g.rotation.y = Math.PI; S.add(h.g); Object.assign(h, { x, z, hp: 100, alive: true, i }); hostages.push(h);
 });
 let bots = [], corpses = [], queue = 0, spawnT = 0, round = 0, clearT = 0, state = 'menu', time = 0;
 function spawnBot() {
-  const h = human({ shirt: [0x5a4a2e, 0x3d4a35, 0x4a3a3a][Math.random() * 3 | 0], pants: 0x3a3a2c, skin: 0x1f1f1f });
-  bx(.2, .05, .02, 0xd0a080, 0, 1.6, .135, h.g);
-  bx(.06, .08, .5, 0x222222, .12, 1.0, .35, h.g);
-  h.armL.rotation.x = -1.2; h.armR.rotation.x = -1.4;
+  const palette = [
+    {shirt:0x4b4a3a, pants:0x282b24, skin:0x9a7055, vest:0x30362e, plate:0x4a4e40, helmet:0x373d32, pouch:0x292d26},
+    {shirt:0x45483b, pants:0x303129, skin:0xb17f5d, vest:0x353b30, plate:0x42483a, helmet:0x4a4e3e, pouch:0x252a23},
+    {shirt:0x51443a, pants:0x292a26, skin:0x8d654f, vest:0x39332c, plate:0x4a4034, helmet:0x37342e, pouch:0x262520}
+  ];
+  const h = human(palette[Math.random()*palette.length|0]);
+  // Equipment and weapon are built into the detailed character rig.
   Object.assign(h, { x: rnd(-22, 22), z: -36, y: 0, hp: 100, cd: 1.5 + Math.random() * 1.2, ph: Math.random() * 6, w: 0, dead: false, t: 0 });
   h.parts.forEach(p => p.userData.bot = h); h.g.position.set(h.x, 0, h.z); S.add(h.g); h.g.updateMatrixWorld(true); bots.push(h);
 }
