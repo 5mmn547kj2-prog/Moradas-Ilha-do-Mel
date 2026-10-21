@@ -30,10 +30,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#050607;touch-action:n
 #rel{right:calc(36px + env(safe-area-inset-right));bottom:calc(142px + env(safe-area-inset-bottom));width:54px;height:54px}
 #swap{right:calc(108px + env(safe-area-inset-right));bottom:calc(112px + env(safe-area-inset-bottom));width:54px;height:54px}
 #scope{right:calc(178px + env(safe-area-inset-right));bottom:calc(102px + env(safe-area-inset-bottom));width:48px;height:48px;display:none}
-#ov{position:fixed;inset:0;background:linear-gradient(160deg,rgba(0,0,0,.92),rgba(12,18,14,.9));display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:5}
+#ov{position:fixed;inset:0;background:linear-gradient(160deg,rgba(0,0,0,.92),rgba(12,18,14,.9));display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:20;pointer-events:auto}
 #ov h1{margin:0 0 8px;font-size:34px;letter-spacing:3px;color:#e8c84a;text-shadow:0 0 24px rgba(232,200,74,.35)}
 #ov p{margin:6px 0 22px;max-width:460px;font-size:14px;line-height:1.6;color:#b8b8b8}
-#go{padding:14px 40px;font-size:17px;font-weight:800;background:linear-gradient(180deg,#f0d060,#c9a020);color:#111;border:0;border-radius:4px;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+#go{pointer-events:auto;cursor:pointer;z-index:30;position:relative;padding:14px 40px;font-size:17px;font-weight:800;background:linear-gradient(180deg,#f0d060,#c9a020);color:#111;border:0;border-radius:4px;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.5)}
 #go:active{transform:scale(.97)}
 #rad{position:absolute;left:12px;top:12px;width:96px;height:96px;border-radius:50%;border:2px solid rgba(232,200,74,.45);box-shadow:0 0 16px rgba(0,0,0,.55),inset 0 0 20px rgba(0,0,0,.4)}
 #feed{position:absolute;right:14px;top:58px;text-align:right;font-size:12px;font-weight:700;text-shadow:0 1px 2px #000}
@@ -74,9 +74,19 @@ html,body{margin:0;height:100%;overflow:hidden;background:#050607;touch-action:n
   <p id="ovp">Counter-Terrorist ops. Defend the hostages from Terrorists.<br>
   Move on the left · Look on the right · Landscape recommended.<br>
   Clear every wave. Lose two hostages — or die — and the mission fails.</p>
-  <button id="go">Engage</button>
+  <button id="go" type="button" onclick="if(window.startGame)window.startGame(event);else{var p=document.getElementById('ovp');if(p)p.textContent='Game script did not load. Open via a local server (not file://) and ensure game.js is present.';}">Engage</button>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+window.__bootError = null;
+window.addEventListener('error', function(e) {
+  window.__bootError = e.message || String(e);
+  var p = document.getElementById('ovp');
+  var t = document.getElementById('ovt');
+  if (t) t.textContent = 'ERROR';
+  if (p) p.textContent = 'Script error: ' + window.__bootError;
+});
+</script>
 <script src="game.js"></script>
 </body>
 </html>

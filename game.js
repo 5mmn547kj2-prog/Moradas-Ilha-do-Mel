@@ -1,12 +1,31 @@
 // CT Assault — CS-inspired FPS. Senior polish: CS-style Ts, death falls, readable combat.
 const $ = id => document.getElementById(id);
 const rnd = (a, b) => a + Math.random() * (b - a);
-const R = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true, powerPreference: 'high-performance' });
-R.setPixelRatio(Math.min(devicePixelRatio, 2.5));
+function showErr(msg) {
+  try {
+    const ov = $('ov'), p = $('ovp'), t = $('ovt');
+    if (t) t.textContent = 'ERROR';
+    if (p) p.textContent = String(msg);
+    if (ov) ov.style.display = 'flex';
+    console.error(msg);
+  } catch (e) { console.error(msg); }
+}
+if (typeof THREE === 'undefined') {
+  showErr('Three.js failed to load. Check your internet connection and reload.');
+  throw new Error('THREE missing');
+}
+let R;
+try {
+  R = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true, powerPreference: 'high-performance' });
+} catch (e) {
+  showErr('WebGL is not available in this browser. Try Chrome/Firefox or enable hardware acceleration.');
+  throw e;
+}
+R.setPixelRatio(Math.min(devicePixelRatio || 1, 2.5));
 R.outputEncoding = THREE.sRGBEncoding;
 R.toneMapping = THREE.ACESFilmicToneMapping;
 R.toneMappingExposure = 1.12;
-R.physicallyCorrectLights = true;
+if ('physicallyCorrectLights' in R) R.physicallyCorrectLights = true;
 R.shadowMap.enabled = true;
 R.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -31,7 +50,7 @@ sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
 sun.shadow.camera.top = 46; sun.shadow.camera.bottom = -46;
 sun.shadow.bias = -0.0004;
-sun.shadow.normalBias = 0.025;
+if ('normalBias' in sun.shadow) sun.shadow.normalBias = 0.025;
 S.add(sun);
 [[0, 5.2, -14], [0, 5.2, 10], [0, 5.2, 33], [-14, 3.8, 6], [14, 3.8, 6]].forEach(p => {
   const l = new THREE.PointLight(0xffefd0, 0.42, 36);
@@ -545,6 +564,9 @@ function look(dx, dy) {
   P.yaw -= dx * s; P.pitch = Math.max(-1.4, Math.min(1.4, P.pitch - dy * s));
 }
 addEventListener('touchstart', e => {
+  // Never hijack the menu / Engage button
+  const tag = e.target && e.target.closest && e.target.closest('#ov, #go, button, a');
+  if (tag || state !== 'play') return;
   for (const t of e.changedTouches) {
     const a = t.target.dataset && t.target.dataset.a;
     if (a) { act(a, true); ts[t.identifier] = { a }; continue; }
@@ -558,6 +580,7 @@ addEventListener('touchstart', e => {
   e.preventDefault();
 }, { passive: false });
 addEventListener('touchmove', e => {
+  if (state !== 'play') return;
   for (const t of e.changedTouches) {
     const s = ts[t.identifier]; if (!s) continue;
     if (s.joy) {
@@ -673,17 +696,33 @@ function over(msg) {
   $('ov').style.display = 'flex';
   round = 0;
 }
-$('go').addEventListener('click', () => {
-  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); AC.resume(); } catch (e) {}
+function startGame(ev) {
+  window.startGame = startGame;
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  if (state === 'play') return;
   try {
-    document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
-    screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {});
-  } catch (e) {}
-  $('ov').style.display = 'none';
-  $('hp').style.display = 'block';
-  state = 'play';
-  newRound();
-});
+    try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC && AC.resume) AC.resume(); } catch (e) {}
+    try {
+      if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+      if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
+    } catch (e) {}
+    $('ov').style.display = 'none';
+    $('hp').style.display = 'block';
+    state = 'play';
+    newRound();
+  } catch (err) {
+    showErr('Start failed: ' + (err && err.message ? err.message : err));
+  }
+}
+window.startGame = startGame;
+const goBtn = $('go');
+if (goBtn) {
+  goBtn.onclick = startGame;
+  goBtn.addEventListener('click', startGame);
+  goBtn.addEventListener('touchend', function(e){ e.preventDefault(); startGame(e); }, { passive: false });
+  goBtn.style.pointerEvents = 'auto';
+  goBtn.style.zIndex = '30';
+}
 
 // ---------- Main loop ----------
 const rc = $('rad').getContext('2d');
