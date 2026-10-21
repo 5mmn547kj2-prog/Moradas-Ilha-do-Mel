@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HAIR RECOVERY: Top-Down Surgeon Simulator</title>
+    <title>FUE Hair Transplant Simulator • Clinical Mode</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -107,15 +107,15 @@
     <div class="w-full max-w-md px-3 mt-1 z-10">
         <div class="bg-slate-900/95 rounded-2xl p-2.5 border border-slate-800 shadow-2xl flex items-center gap-2.5 relative">
             <!-- Patient Avatar Icon -->
-            <div class="relative w-12 h-12 rounded-full bg-slate-800 flex-shrink-0 flex items-center justify-center text-3xl border-2 border-teal-500/50 shadow-inner overflow-hidden" id="avatar-box">
-                <span id="patient-emoji">💪</span>
-                <span id="sweat-icon" class="hidden absolute top-0 right-0 text-xs animate-bounce">💦</span>
+            <div class="relative w-14 h-14 rounded-full bg-slate-800 flex-shrink-0 border-2 border-teal-500/60 shadow-inner overflow-hidden ring-2 ring-teal-500/30" id="avatar-box">
+                <img id="patient-photo" src="coach_alex.jpg" alt="Coach Alex" class="w-full h-full object-cover object-top scale-110">
+                <span id="sweat-icon" class="hidden absolute top-0 right-0 text-xs animate-bounce drop-shadow">💦</span>
             </div>
 
             <div class="flex-grow min-w-0">
                 <div class="flex justify-between items-center">
                     <h3 class="font-black text-xs text-amber-400 truncate">Coach Alex (Personal Trainer)</h3>
-                    <span class="text-[9px] font-extrabold bg-teal-950 text-teal-300 px-2 py-0.5 rounded-full border border-teal-500/30" id="step-status">100% Top View</span>
+                    <span class="text-[9px] font-extrabold bg-teal-950 text-teal-300 px-2 py-0.5 rounded-full border border-teal-500/30" id="step-status">FUE Top-Down View</span>
                 </div>
                 
                 <!-- Speech Bubble Quote -->
@@ -161,12 +161,12 @@
             
             <!-- Tool Badge -->
             <div id="phase-badge" class="absolute top-2.5 left-2.5 bg-sky-500 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1">
-                <i class="fa-solid fa-syringe"></i> Anesthesia Syringe
+                <i class="fa-solid fa-syringe"></i> Local Anesthesia
             </div>
 
             <!-- View Badge -->
             <div class="absolute top-2.5 right-2.5 bg-slate-800/90 text-amber-300 px-2.5 py-1 rounded-xl text-[10px] font-bold border border-slate-700 shadow-md flex items-center gap-1">
-                <i class="fa-solid fa-circle-dot"></i> Unified 360° Top View
+                <i class="fa-solid fa-user-doctor"></i> Clinical Top-Down OR View
             </div>
 
             <!-- CRITICAL PAIN LOCKOUT OVERLAY (PAIN = 100%) -->
@@ -201,15 +201,15 @@
             <div class="flex gap-1.5 flex-grow justify-around" id="tools-bar">
                 <button data-tool="anesthesia" class="tool-btn active bg-sky-500/20 border-2 border-sky-400 text-sky-300 p-2 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
                     <i class="fa-solid fa-syringe text-base"></i>
-                    <span class="text-[9px] font-bold mt-0.5 uppercase">1. Numb</span>
+                    <span class="text-[9px] font-bold mt-0.5 uppercase">1. Anesthetize</span>
                 </button>
                 <button data-tool="harvest" class="tool-btn bg-slate-800 border-2 border-slate-700 text-slate-400 p-2 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
                     <i class="fa-solid fa-scissors text-base"></i>
-                    <span class="text-[9px] font-bold mt-0.5 uppercase">2. Harvest Back</span>
+                    <span class="text-[9px] font-bold mt-0.5 uppercase">2. Extract FUE</span>
                 </button>
                 <button data-tool="implant" class="tool-btn bg-slate-800 border-2 border-slate-700 text-slate-400 p-2 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
                     <i class="fa-solid fa-hand-holding-medical text-base"></i>
-                    <span class="text-[9px] font-bold mt-0.5 uppercase">3. Plant Front</span>
+                    <span class="text-[9px] font-bold mt-0.5 uppercase">3. Implant Grafts</span>
                 </button>
             </div>
         </div>
@@ -222,19 +222,26 @@
             <span id="graft-counter" class="text-amber-400 font-black text-xs">0 / 80 Grafts</span>
         </div>
         <button id="finish-surgery-btn" class="w-full bg-gradient-to-r from-emerald-400 via-teal-400 to-sky-400 text-slate-950 font-black py-2.5 rounded-2xl text-sm uppercase tracking-wider shadow-lg btn-arcade flex items-center justify-center gap-2">
-            <i class="fa-solid fa-award text-base"></i> Complete Surgery & Reveal 12-Mo Gains!
+            <i class="fa-solid fa-user-doctor text-base"></i> Complete Procedure & Reveal 12-Mo Result
         </button>
     </footer>
 
     <!-- MODAL: 12-MONTH TIMELAPSE & GRADE REVEAL -->
     <div id="result-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border-2 border-amber-400/50 rounded-3xl w-full max-w-md p-5 shadow-2xl flex flex-col items-center text-center">
-            <h2 class="text-2xl font-black text-amber-400 font-teko text-3xl tracking-wide leading-none">12-MONTH HAIRLINE TRANSFORMATION</h2>
-            <p class="text-[10px] text-slate-400 mb-2">Coach Alex's Post-Op Gym Reveal</p>
+            <h2 class="text-2xl font-black text-amber-400 font-teko text-3xl tracking-wide leading-none">12-MONTH HAIRLINE TRANSFORM</h2>
+            <p class="text-[10px] text-slate-400 mb-2">Coach Alex • Personal Trainer • Post-Op Gym Reveal</p>
 
-            <!-- Results Canvas -->
-            <div class="relative w-48 h-48 bg-slate-950 rounded-2xl overflow-hidden border-2 border-teal-400/40 shadow-inner mb-2">
-                <canvas id="timelapse-canvas" class="w-full h-full"></canvas>
+            <!-- Patient photo + Results Canvas -->
+            <div class="flex items-center gap-3 mb-2">
+                <div class="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-teal-400/50 shadow-lg flex-shrink-0">
+                    <img src="coach_alex.jpg" alt="Coach Alex" class="w-full h-full object-cover object-top">
+                    <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent text-[8px] text-white font-bold py-0.5 text-center">PRE-OP</div>
+                </div>
+                <div class="relative w-48 h-48 bg-slate-950 rounded-2xl overflow-hidden border-2 border-teal-400/40 shadow-inner">
+                    <canvas id="timelapse-canvas" class="w-full h-full"></canvas>
+                    <div class="absolute bottom-1 inset-x-0 text-center text-[8px] font-bold text-teal-300/80">12-MO TOP-DOWN RESULT</div>
+                </div>
             </div>
 
             <!-- Grade & Social Stats -->
@@ -549,11 +556,11 @@
             });
 
             if (tool === 'anesthesia') {
-                badge.innerHTML = `<i class="fa-solid fa-syringe"></i> 1. Anesthesia Syringe`;
+                badge.innerHTML = `<i class="fa-solid fa-syringe"></i> 1. Local Anesthesia`;
             } else if (tool === 'harvest') {
-                badge.innerHTML = `<i class="fa-solid fa-scissors"></i> 2. Harvest Back Donor`;
+                badge.innerHTML = `<i class="fa-solid fa-scissors"></i> 2. FUE Extraction`;
             } else if (tool === 'implant') {
-                badge.innerHTML = `<i class="fa-solid fa-hand-holding-medical"></i> 3. Plant Front Recipient`;
+                badge.innerHTML = `<i class="fa-solid fa-hand-holding-medical"></i> 3. Graft Implantation`;
             }
         }
 
@@ -701,7 +708,7 @@
             setTimeout(() => el.remove(), 850);
         }
 
-        // --- RENDER LOOP: 100% UNIFIED TOP-DOWN VIEW ---
+        // --- RENDER LOOP: CLINICAL TOP-DOWN SURGICAL VIEW ---
         function renderLoop() {
             ctx.clearRect(0, 0, canvasSize, canvasSize);
 
@@ -710,80 +717,140 @@
 
             const cx = canvasSize / 2;
             const cy = canvasSize / 2;
+            const skinTone = state.patientPain > 80 ? '#f0a090' : '#d4a574';
+            const skinHighlight = state.patientPain > 80 ? '#f8c4b8' : '#e8c4a0';
 
-            // Background
-            ctx.fillStyle = '#090d16';
+            // Clinical background (sterile OR dark)
+            ctx.fillStyle = '#0a0f1a';
             ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-            // 1. Gym Shirt / Shoulders at Bottom (Top View)
-            ctx.fillStyle = '#1e293b';
+            // Soft surgical light vignette
+            const lightGrad = ctx.createRadialGradient(cx, cy - 30, 20, cx, cy, canvasSize * 0.7);
+            lightGrad.addColorStop(0, 'rgba(255,255,255,0.06)');
+            lightGrad.addColorStop(0.6, 'rgba(255,255,255,0.02)');
+            lightGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = lightGrad;
+            ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+            // 1. Shoulders / black training shirt (top-down)
+            ctx.fillStyle = '#111827';
             ctx.beginPath();
-            ctx.ellipse(cx, cy + 155, 120, 45, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx, cy + 158, 125, 48, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Shirt collar hint
+            ctx.strokeStyle = '#1f2937';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy + 125, 55, 18, 0, 0, Math.PI);
+            ctx.stroke();
+
+            // 2. Ears (match photo skin + slight redness on pain)
+            ctx.fillStyle = skinTone;
+            ctx.beginPath();
+            ctx.ellipse(cx - 130, cy + 5, 13, 24, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 130, cy + 5, 13, 24, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Ear inner
+            ctx.fillStyle = 'rgba(0,0,0,0.12)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 130, cy + 5, 6, 12, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 130, cy + 5, 6, 12, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // 2. Ears on Left & Right Sides
-            ctx.fillStyle = state.patientPain > 80 ? '#fca5a5' : '#eba078';
+            // 3. Nose tip (pointing up = front of head)
+            ctx.fillStyle = skinTone;
             ctx.beginPath();
-            ctx.ellipse(cx - 132, cy, 12, 22, 0, 0, Math.PI * 2);
-            ctx.ellipse(cx + 132, cy, 12, 22, 0, 0, Math.PI * 2);
+            ctx.moveTo(cx - 13, cy - 128);
+            ctx.quadraticCurveTo(cx, cy - 155, cx + 13, cy - 128);
+            ctx.quadraticCurveTo(cx, cy - 135, cx - 13, cy - 128);
+            ctx.fill();
+            // Nostril hint
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5, cy - 132, 3, 2, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 5, cy - 132, 3, 2, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // 3. Nose Tip Pointing UP at Front/Top
+            // 4. Beard / stubble zone (matches photo full beard)
+            const beardGrad = ctx.createRadialGradient(cx, cy + 70, 10, cx, cy + 90, 90);
+            beardGrad.addColorStop(0, 'rgba(45, 28, 18, 0.55)');
+            beardGrad.addColorStop(0.7, 'rgba(35, 20, 12, 0.35)');
+            beardGrad.addColorStop(1, 'rgba(25, 15, 8, 0)');
+            ctx.fillStyle = beardGrad;
             ctx.beginPath();
-            ctx.moveTo(cx - 14, cy - 132);
-            ctx.lineTo(cx, cy - 152);
-            ctx.lineTo(cx + 14, cy - 132);
+            ctx.ellipse(cx, cy + 85, 85, 55, 0, 0, Math.PI);
             ctx.fill();
 
-            // 4. Stubble Beard Outline around Bottom Edge
-            ctx.fillStyle = 'rgba(38, 20, 10, 0.35)';
+            // 5. Main scalp (realistic skin with subtle gradient)
+            const scalpGrad = ctx.createRadialGradient(cx - 20, cy - 40, 10, cx, cy, 140);
+            scalpGrad.addColorStop(0, skinHighlight);
+            scalpGrad.addColorStop(0.5, skinTone);
+            scalpGrad.addColorStop(1, '#c4926a');
+            ctx.fillStyle = scalpGrad;
             ctx.beginPath();
-            ctx.ellipse(cx, cy + 90, 80, 50, 0, 0, Math.PI);
+            ctx.ellipse(cx, cy, 126, 136, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // 5. Main Head Scalp Oval (Top-Down 360°)
-            ctx.fillStyle = state.patientPain > 80 ? '#fca5a5' : '#eba078';
+            // 6. FRONT RECEPTOR ZONE (Bald M-Shape / Norwood pattern)
+            ctx.fillStyle = 'rgba(185, 28, 28, 0.08)';
             ctx.beginPath();
-            ctx.ellipse(cx, cy, 128, 138, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx, cy - 38, 78, 58, 0, 0, Math.PI * 2);
             ctx.fill();
-
-            // 6. FRONT RECEPTOR ZONE (Bald M-Shape Receding Hairline)
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
-            ctx.beginPath();
-            ctx.ellipse(cx, cy - 35, 75, 55, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
-            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 4]);
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Front Label
-            ctx.fillStyle = '#f43f5e';
-            ctx.font = '900 10px sans-serif';
+            // Front clinical label
+            ctx.fillStyle = 'rgba(244, 63, 94, 0.9)';
+            ctx.font = '800 9px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText("FRONT (PLANT ZONE)", cx, cy - 75);
+            ctx.fillText("FRONTAL RECIPIENT ZONE", cx, cy - 78);
+            ctx.font = '600 8px sans-serif';
+            ctx.fillStyle = 'rgba(244, 63, 94, 0.7)';
+            ctx.fillText("(Plant FUE grafts here)", cx, cy - 67);
 
-            // 7. BACK DONOR ZONE (Dense Hair)
-            ctx.fillStyle = 'rgba(45, 212, 191, 0.1)';
+            // 7. BACK DONOR ZONE
+            ctx.fillStyle = 'rgba(13, 148, 136, 0.08)';
             ctx.beginPath();
-            ctx.ellipse(cx, cy + 55, 85, 45, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx, cy + 55, 88, 48, 0, 0, Math.PI * 2);
             ctx.fill();
+            ctx.strokeStyle = 'rgba(45, 212, 191, 0.3)';
+            ctx.setLineDash([5, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
 
-            // Back Label
-            ctx.fillStyle = '#2dd4bf';
-            ctx.fillText("BACK (DONOR HARVEST ZONE)", cx, cy + 105);
+            // Back clinical label
+            ctx.fillStyle = 'rgba(45, 212, 191, 0.9)';
+            ctx.font = '800 9px sans-serif';
+            ctx.fillText("OCCIPITAL DONOR AREA", cx, cy + 108);
+            ctx.font = '600 8px sans-serif';
+            ctx.fillStyle = 'rgba(45, 212, 191, 0.7)';
+            ctx.fillText("(Extract follicular units)", cx, cy + 118);
 
-            // 8. Render Donor Follicles (Back/Sides)
+            // 8. Render Donor Follicles (dark brown matching patient)
             state.donorFollicles.forEach(f => {
                 if (f.extracted) {
+                    // Extraction site (tiny red dot + white center)
                     ctx.beginPath();
-                    ctx.arc(f.x, f.y, 2, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+                    ctx.arc(f.x, f.y, 2.2, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(220, 38, 38, 0.55)';
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(f.x, f.y, 0.8, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)';
                     ctx.fill();
                 } else {
+                    // Natural dark hair follicle (matches photo hair)
                     ctx.beginPath();
-                    ctx.arc(f.x, f.y, 2.5, 0, Math.PI * 2);
-                    ctx.fillStyle = '#26140a';
+                    ctx.arc(f.x, f.y, 2.4, 0, Math.PI * 2);
+                    ctx.fillStyle = '#1c1008';
+                    ctx.fill();
+                    // Tiny highlight for depth
+                    ctx.beginPath();
+                    ctx.arc(f.x - 0.6, f.y - 0.6, 0.7, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(80, 50, 30, 0.6)';
                     ctx.fill();
                 }
             });
@@ -791,56 +858,80 @@
             // 9. Render Front Recipient Slots & Planted Grafts
             state.recipientSlots.forEach(s => {
                 if (s.implanted) {
+                    // Freshly placed graft (tiny dark follicle + short emerging hair)
                     ctx.beginPath();
-                    ctx.arc(s.x, s.y, 2.5, 0, Math.PI * 2);
-                    ctx.fillStyle = '#10b981';
+                    ctx.arc(s.x, s.y, 2.2, 0, Math.PI * 2);
+                    ctx.fillStyle = '#0f766e';
                     ctx.fill();
-
-                    // Grown hair strand pointing up/forward
-                    ctx.strokeStyle = '#26140a';
-                    ctx.lineWidth = 2;
+                    // Short dark hair shaft matching patient
+                    ctx.strokeStyle = '#1c1008';
+                    ctx.lineWidth = 1.8;
+                    ctx.lineCap = 'round';
                     ctx.beginPath();
                     ctx.moveTo(s.x, s.y);
-                    ctx.lineTo(s.x, s.y - 6);
+                    ctx.lineTo(s.x, s.y - 7);
                     ctx.stroke();
                 } else {
+                    // Empty recipient site (punched pore ready for implant)
                     ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                    ctx.arc(s.x, s.y, s.radius * 0.7, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
                     ctx.fill();
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+                    ctx.lineWidth = 1;
                     ctx.stroke();
+                    // Tiny center mark
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, 0.9, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                    ctx.fill();
                 }
             });
 
-            // 10. Anesthesia Indicators
+            // 10. Anesthesia / local block indicators
             if (state.currentTool === 'anesthesia') {
                 state.anesthesiaZones.forEach(z => {
                     ctx.beginPath();
                     ctx.arc(z.x, z.y, z.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
                     ctx.fill();
-                    ctx.strokeStyle = '#38bdf8';
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.7)';
                     ctx.lineWidth = 1.5;
+                    ctx.setLineDash([3, 3]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    // Crosshair for injection site
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(z.x - 6, z.y); ctx.lineTo(z.x + 6, z.y);
+                    ctx.moveTo(z.x, z.y - 6); ctx.lineTo(z.x, z.y + 6);
                     ctx.stroke();
                 });
             }
 
             ctx.restore();
 
-            // Avatar Emoji Shift
-            const emojiEl = document.getElementById('patient-emoji');
+            // Avatar status (photo + sweat indicator)
+            const avatarBox = document.getElementById('avatar-box');
             const sweatEl = document.getElementById('sweat-icon');
+            const photoEl = document.getElementById('patient-photo');
 
             if (state.patientPain >= 80) {
-                emojiEl.innerText = "😭";
                 sweatEl.classList.remove('hidden');
+                if (photoEl) photoEl.style.filter = 'saturate(0.7) brightness(0.95)';
+                avatarBox.classList.add('ring-rose-500');
+                avatarBox.classList.remove('ring-teal-500/30');
             } else if (state.patientPain >= 40) {
-                emojiEl.innerText = "😬";
                 sweatEl.classList.remove('hidden');
+                if (photoEl) photoEl.style.filter = 'saturate(0.85)';
+                avatarBox.classList.remove('ring-rose-500');
+                avatarBox.classList.add('ring-teal-500/30');
             } else {
-                emojiEl.innerText = "💪";
                 sweatEl.classList.add('hidden');
+                if (photoEl) photoEl.style.filter = 'none';
+                avatarBox.classList.remove('ring-rose-500');
+                avatarBox.classList.add('ring-teal-500/30');
             }
 
             requestAnimationFrame(renderLoop);
@@ -884,24 +975,69 @@
             tCanvas.width = 192;
             tCanvas.height = 192;
 
-            tCtx.fillStyle = '#090d16';
+            const implantedCount = state.recipientSlots.filter(s => s.implanted).length;
+            const density = Math.min(1, implantedCount / state.targetGrafts);
+
+            tCtx.fillStyle = '#0a0f1a';
             tCtx.fillRect(0, 0, 192, 192);
 
-            // Top view post-op result
-            tCtx.fillStyle = '#eba078';
+            // Soft light
+            const lg = tCtx.createRadialGradient(96, 70, 10, 96, 96, 90);
+            lg.addColorStop(0, 'rgba(255,255,255,0.05)');
+            lg.addColorStop(1, 'rgba(0,0,0,0)');
+            tCtx.fillStyle = lg;
+            tCtx.fillRect(0, 0, 192, 192);
+
+            // Scalp skin
+            const skinG = tCtx.createRadialGradient(85, 70, 5, 96, 96, 70);
+            skinG.addColorStop(0, '#e8c4a0');
+            skinG.addColorStop(1, '#d4a574');
+            tCtx.fillStyle = skinG;
             tCtx.beginPath();
-            tCtx.ellipse(96, 96, 60, 68, 0, 0, Math.PI * 2);
+            tCtx.ellipse(96, 96, 62, 70, 0, 0, Math.PI * 2);
             tCtx.fill();
 
-            // Nose
+            // Nose tip
+            tCtx.fillStyle = '#d4a574';
             tCtx.beginPath();
-            tCtx.moveTo(88, 28); tCtx.lineTo(96, 16); tCtx.lineTo(104, 28);
+            tCtx.moveTo(88, 30);
+            tCtx.quadraticCurveTo(96, 14, 104, 30);
+            tCtx.quadraticCurveTo(96, 24, 88, 30);
             tCtx.fill();
 
-            // Full restored hair density across whole scalp
-            tCtx.fillStyle = '#26140a';
+            // Dense donor hair (back & sides) always present
+            tCtx.fillStyle = '#1c1008';
             tCtx.beginPath();
-            tCtx.ellipse(96, 96, 58, 65, 0, 0, Math.PI * 2);
+            tCtx.ellipse(96, 115, 55, 35, 0, 0.1 * Math.PI, 0.9 * Math.PI);
+            tCtx.fill();
+
+            // Restored frontal density proportional to grafts placed
+            const frontAlpha = 0.25 + density * 0.75;
+            tCtx.fillStyle = `rgba(28, 16, 8, ${frontAlpha})`;
+            tCtx.beginPath();
+            tCtx.ellipse(96, 70, 48, 40, 0, 0, Math.PI * 2);
+            tCtx.fill();
+
+            // Individual hair strands for density feel
+            tCtx.strokeStyle = '#1c1008';
+            tCtx.lineWidth = 1.2;
+            tCtx.lineCap = 'round';
+            const strandCount = Math.floor(30 + density * 90);
+            for (let i = 0; i < strandCount; i++) {
+                const angle = -Math.PI * 0.9 + Math.random() * Math.PI * 0.8;
+                const dist = 15 + Math.random() * 40;
+                const sx = 96 + Math.cos(angle) * dist;
+                const sy = 75 + Math.sin(angle) * dist * 0.7;
+                tCtx.beginPath();
+                tCtx.moveTo(sx, sy);
+                tCtx.lineTo(sx + (Math.random() - 0.5) * 2, sy - 4 - Math.random() * 4);
+                tCtx.stroke();
+            }
+
+            // Beard hint
+            tCtx.fillStyle = 'rgba(28, 16, 8, 0.4)';
+            tCtx.beginPath();
+            tCtx.ellipse(96, 145, 40, 18, 0, 0, Math.PI);
             tCtx.fill();
         }
     </script>
