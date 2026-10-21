@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HAIR RECOVERY: Personal Trainer Edition!</title>
+    <title>HAIR RECOVERY: Ultimate Surgery Simulator</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -18,7 +18,7 @@
         }
         body {
             font-family: 'Fredoka', cursive, sans-serif;
-            background-color: #090d16;
+            background-color: #050811;
             color: #f8fafc;
             overflow: hidden;
         }
@@ -27,18 +27,18 @@
         }
         .btn-arcade {
             transition: transform 0.08s, box-shadow 0.08s;
-            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.6);
         }
         .btn-arcade:active {
             transform: translateY(3px);
-            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
         }
-        .pulse-fast {
-            animation: pulse-anim 0.8s infinite alternate ease-in-out;
+        .pulse-pain {
+            animation: pulse-red 0.6s infinite alternate ease-in-out;
         }
-        @keyframes pulse-anim {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.08); }
+        @keyframes pulse-red {
+            0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(244,63,94,0.5)); }
+            100% { transform: scale(1.08); filter: drop-shadow(0 0 10px rgba(244,63,94,0.9)); }
         }
         .float-text {
             animation: float-up 0.85s ease-out forwards;
@@ -61,7 +61,7 @@
             padding: 6px 12px;
             font-weight: 800;
             font-size: 11px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
         }
         .speech-bubble:after {
             content: '';
@@ -87,62 +87,64 @@
             <!-- Cash Earned -->
             <div class="bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-xl border border-amber-500/30 flex items-center gap-1 font-bold text-xs">
                 <i class="fa-solid fa-coins text-amber-400"></i>
-                <span id="cash-display">$650</span>
+                <span id="cash-display">$850</span>
             </div>
-            <!-- Graft Multiplier & Combos -->
+            <!-- Graft Storage Multiplier -->
             <div class="bg-teal-500/20 text-teal-300 px-2.5 py-1 rounded-xl border border-teal-500/30 flex items-center gap-1 font-bold text-xs">
-                <i class="fa-solid fa-bolt text-teal-400"></i>
-                <span id="combo-display">1x Multiplier</span>
+                <i class="fa-solid fa-box-archive text-teal-400"></i>
+                <span id="graft-vault">0 Harvested</span>
             </div>
         </div>
 
         <!-- Timer -->
-        <div class="bg-rose-500/20 text-rose-400 px-3 py-1 rounded-xl border border-rose-500/30 flex items-center gap-1.5 font-bold text-xs">
-            <i class="fa-solid fa-stopwatch pulse-fast text-rose-500"></i>
-            <span id="timer-display" class="font-teko text-lg leading-none">03:00</span>
+        <div class="bg-sky-500/20 text-sky-300 px-3 py-1 rounded-xl border border-sky-500/30 flex items-center gap-1.5 font-bold text-xs">
+            <i class="fa-solid fa-stopwatch text-sky-400"></i>
+            <span id="timer-display" class="font-teko text-lg leading-none">03:30</span>
         </div>
     </header>
 
-    <!-- PATIENT STATUS CARD -->
+    <!-- PATIENT VITALS & NUMBING DECAY BOARD -->
     <div class="w-full max-w-md px-3 mt-1 z-10">
-        <div class="bg-slate-900/90 rounded-2xl p-2.5 border border-slate-800 shadow-xl flex items-center gap-2.5 relative">
+        <div class="bg-slate-900/95 rounded-2xl p-2.5 border border-slate-800 shadow-2xl flex items-center gap-2.5 relative">
             <!-- Patient Avatar Icon -->
-            <div class="relative w-12 h-12 rounded-full bg-slate-800 flex-shrink-0 flex items-center justify-center text-3xl border-2 border-teal-500/50 shadow-inner" id="avatar-box">
+            <div class="relative w-12 h-12 rounded-full bg-slate-800 flex-shrink-0 flex items-center justify-center text-3xl border-2 border-teal-500/50 shadow-inner overflow-hidden" id="avatar-box">
                 <span id="patient-emoji">💪</span>
-                <span id="sweat-icon" class="hidden absolute -top-1 -right-1 text-xs animate-bounce">💦</span>
+                <span id="sweat-icon" class="hidden absolute top-0 right-0 text-xs animate-bounce">💦</span>
             </div>
 
             <div class="flex-grow min-w-0">
                 <div class="flex justify-between items-center">
                     <h3 class="font-black text-xs text-amber-400 truncate">Coach Alex (Personal Trainer)</h3>
-                    <span class="text-[9px] font-extrabold bg-teal-950 text-teal-300 px-2 py-0.5 rounded-full border border-teal-500/30">Target: 150 Grafts</span>
+                    <span class="text-[9px] font-extrabold bg-teal-950 text-teal-300 px-2 py-0.5 rounded-full border border-teal-500/30" id="step-status">Step 1: Numb Scalp</span>
                 </div>
                 
                 <!-- Speech Bubble Quote -->
                 <div class="mt-1">
                     <div class="speech-bubble text-slate-900 leading-tight">
-                        <span id="patient-speech">"Bro, make my temples look as full as my gains!"</span>
+                        <span id="patient-speech">"Bro, keep that numbing high! No pain, only gains!"</span>
                     </div>
                 </div>
 
-                <!-- Patient Pain & Satisfaction Bars -->
+                <!-- Patient Pain & Decay Gauges -->
                 <div class="grid grid-cols-2 gap-2 mt-2">
+                    <!-- Numbing Level (Decays) -->
                     <div>
                         <div class="flex justify-between text-[9px] font-bold mb-0.5">
-                            <span class="text-emerald-400"><i class="fa-solid fa-heart-circle-check mr-0.5"></i> Satisfaction</span>
-                            <span id="satis-val" class="text-slate-300">100%</span>
+                            <span class="text-sky-400"><i class="fa-solid fa-syringe mr-0.5"></i> Numbing Effect</span>
+                            <span id="numb-val" class="text-sky-300">0%</span>
                         </div>
                         <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
-                            <div id="satis-bar" class="bg-emerald-400 h-full w-full transition-all duration-300"></div>
+                            <div id="numb-bar" class="bg-sky-400 h-full w-0 transition-all duration-200"></div>
                         </div>
                     </div>
+                    <!-- Pain Meter (Blocks at 100%) -->
                     <div>
                         <div class="flex justify-between text-[9px] font-bold mb-0.5">
-                            <span class="text-rose-400"><i class="fa-solid fa-heart-pulse pulse-fast mr-0.5 text-rose-500"></i> Pain (<span id="bpm-display">72</span> BPM)</span>
+                            <span class="text-rose-400"><i class="fa-solid fa-heart-pulse pulse-pain mr-0.5 text-rose-500"></i> Pain (<span id="bpm-display">72</span> BPM)</span>
                             <span id="pain-val" class="text-slate-300">0%</span>
                         </div>
                         <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
-                            <div id="pain-bar" class="bg-rose-500 h-full w-0 transition-all duration-300"></div>
+                            <div id="pain-bar" class="bg-rose-500 h-full w-0 transition-all duration-200"></div>
                         </div>
                     </div>
                 </div>
@@ -158,66 +160,70 @@
             <canvas id="surgery-canvas" class="w-full h-full cursor-crosshair"></canvas>
             
             <!-- Phase Indicator Badge -->
-            <div id="phase-badge" class="absolute top-2.5 left-2.5 bg-sky-500 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md backdrop-blur-sm flex items-center gap-1">
+            <div id="phase-badge" class="absolute top-2.5 left-2.5 bg-sky-500 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1">
                 <i class="fa-solid fa-syringe"></i> Phase 1: Local Anesthesia
             </div>
 
-            <!-- View Switcher Toggle (Front Face vs Donor Scalp) -->
-            <button id="view-toggle-btn" class="absolute top-2.5 right-2.5 bg-slate-800/90 text-teal-300 hover:text-white px-2.5 py-1 rounded-xl text-[10px] font-bold border border-slate-700 shadow-md flex items-center gap-1">
-                <i class="fa-solid fa-rotate"></i> <span id="view-toggle-text">Donor Scalp</span>
-            </button>
+            <!-- View Angle Indicator -->
+            <div id="view-indicator" class="absolute top-2.5 right-2.5 bg-slate-800/90 text-amber-300 px-2.5 py-1 rounded-xl text-[10px] font-bold border border-slate-700 shadow-md flex items-center gap-1">
+                <i class="fa-solid fa-camera"></i> <span id="view-label">Angled Portrait</span>
+            </div>
+
+            <!-- CRITICAL WARNING OVERLAY (PAIN = 100%) -->
+            <div id="pain-lockout-banner" class="hidden absolute inset-0 bg-rose-950/90 backdrop-blur-md z-40 p-4 flex flex-col items-center justify-center text-center animate-pulse border-4 border-rose-500">
+                <i class="fa-solid fa-triangle-exclamation text-5xl text-rose-500 mb-2"></i>
+                <h2 class="text-2xl font-black text-white font-teko tracking-wider leading-none">PATIENT IN EXTREME PAIN!</h2>
+                <p class="text-xs text-rose-200 font-bold mt-1 mb-3">Surgical procedures are BLOCKED. Inject anesthesia or use Lidocaine spray immediately!</p>
+                <button id="emergency-numb-btn" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider btn-arcade flex items-center gap-1.5 shadow-lg">
+                    <i class="fa-solid fa-syringe text-sm"></i> Emergency Numbing Shot
+                </button>
+            </div>
 
             <!-- Floating Feedback Overlay Container -->
             <div id="floating-overlay" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
-
-            <!-- Extraction Pull Angle Indicator -->
-            <div id="pull-guide" class="hidden absolute pointer-events-none w-20 h-20 rounded-full border-2 border-dashed border-teal-400/80 flex items-center justify-center">
-                <div class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></div>
-            </div>
         </div>
 
-        <!-- SOOTHING & PAIN MANAGEMENT TOOLBAR -->
+        <!-- EMERGENCY SOOTHING TOOLBAR -->
         <div class="w-full mt-2 grid grid-cols-3 gap-1.5 px-1">
             <button id="calm-ice-btn" class="bg-slate-800 hover:bg-slate-700 border border-cyan-500/30 text-cyan-300 py-1.5 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 btn-arcade">
                 <i class="fa-solid fa-icicles"></i> Ice Pack (-15% Pain)
             </button>
             <button id="calm-spray-btn" class="bg-slate-800 hover:bg-slate-700 border border-teal-500/30 text-teal-300 py-1.5 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 btn-arcade">
-                <i class="fa-solid fa-spray-can"></i> Lidocaine (-10% Pain)
+                <i class="fa-solid fa-spray-can"></i> Lidocaine Spray
             </button>
             <button id="calm-music-btn" class="bg-slate-800 hover:bg-slate-700 border border-purple-500/30 text-purple-300 py-1.5 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 btn-arcade">
                 <i class="fa-solid fa-dumbbell"></i> Gym Beats
             </button>
         </div>
 
-        <!-- TOOL & PHASE SELECTION BAR -->
+        <!-- STEP & TOOL SELECTOR BAR -->
         <div class="w-full mt-2 bg-slate-900/90 rounded-2xl p-2 border border-slate-800 flex justify-between items-center gap-2">
-            <div class="flex gap-1.5 flex-grow justify-around" id="tools-bar">
+            <div class="flex gap-1 flex-grow justify-around" id="tools-bar">
                 <button data-tool="anesthesia" class="tool-btn active bg-sky-500/20 border-2 border-sky-400 text-sky-300 p-2 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
                     <i class="fa-solid fa-syringe text-base"></i>
-                    <span class="text-[9px] font-bold mt-0.5 uppercase">Numb</span>
+                    <span class="text-[9px] font-bold mt-0.5 uppercase">1. Numb</span>
                 </button>
                 <button data-tool="harvest" class="tool-btn bg-slate-800 border-2 border-slate-700 text-slate-400 p-2 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
                     <i class="fa-solid fa-scissors text-base"></i>
-                    <span class="text-[9px] font-bold mt-0.5 uppercase">Harvest</span>
+                    <span class="text-[9px] font-bold mt-0.5 uppercase">2. Harvest</span>
+                </button>
+                <button data-tool="incision" class="tool-btn bg-slate-800 border-2 border-slate-700 text-slate-400 p-2 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
+                    <i class="fa-solid fa-scalpel text-base"></i>
+                    <span class="text-[9px] font-bold mt-0.5 uppercase">3. Slits</span>
                 </button>
                 <button data-tool="implant" class="tool-btn bg-slate-800 border-2 border-slate-700 text-slate-400 p-2 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
                     <i class="fa-solid fa-hand-holding-medical text-base"></i>
-                    <span class="text-[9px] font-bold mt-0.5 uppercase">Implant</span>
+                    <span class="text-[9px] font-bold mt-0.5 uppercase">4. Plant</span>
                 </button>
             </div>
-            
-            <button id="switch-phase-btn" class="bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-black px-3 py-2 rounded-xl text-[11px] uppercase tracking-wider btn-arcade flex items-center gap-1">
-                <span id="phase-btn-text">Harvest Phase</span>
-                <i class="fa-solid fa-arrow-right"></i>
-            </button>
         </div>
     </main>
 
     <!-- FOOTER: Progress & Finish -->
     <footer class="w-full max-w-md px-3 pb-3 pt-1 z-10 flex flex-col gap-1.5">
         <div class="flex justify-between items-center text-[11px] font-bold text-slate-400 px-1">
-            <span>Temples Hairline Progress:</span>
-            <span id="graft-counter" class="text-amber-400 font-black text-xs">0 / 150 Grafts</span>
+            <span>Balding Crown Implantation Target:</span>
+            <span id="graft-counter" class="text-amber-400 font-black text-xs">0 / 120 Grafts</span>
         </div>
         <button id="finish-surgery-btn" class="w-full bg-gradient-to-r from-emerald-400 via-teal-400 to-sky-400 text-slate-950 font-black py-2.5 rounded-2xl text-sm uppercase tracking-wider shadow-lg btn-arcade flex items-center justify-center gap-2">
             <i class="fa-solid fa-award text-base"></i> Finish Surgery & Reveal 12-Mo Gains!
@@ -239,16 +245,16 @@
             <div class="flex items-center gap-4 mb-2">
                 <div class="bg-slate-800 px-3 py-1 rounded-xl border border-slate-700">
                     <span class="text-[9px] text-slate-400 block">SURGERY GRADE</span>
-                    <span id="res-grade" class="text-3xl font-black text-amber-400 font-teko leading-none">GRADE A</span>
+                    <span id="res-grade" class="text-3xl font-black text-amber-400 font-teko leading-none">GRADE S</span>
                 </div>
                 <div class="bg-slate-800 px-3 py-1 rounded-xl border border-slate-700">
                     <span class="text-[9px] text-slate-400 block">GYM LIKES</span>
-                    <span id="res-likes" class="text-xl font-black text-rose-400 leading-none">❤️ 2.4k</span>
+                    <span id="res-likes" class="text-xl font-black text-rose-400 leading-none">❤️ 14.2k</span>
                 </div>
             </div>
 
             <div id="result-feedback" class="bg-slate-800 rounded-xl p-2.5 text-xs text-slate-200 italic w-full mb-2 border border-slate-700">
-                "Pure gains bro! I look like a beast on the gym floor!"
+                "Pure gains bro! My temples and crown look as full as my arms!"
             </div>
 
             <div class="bg-slate-950 rounded-xl p-2.5 w-full mb-3 grid grid-cols-2 gap-2 text-xs">
@@ -261,8 +267,8 @@
                     <span id="res-satisfaction" class="font-black text-emerald-400 text-sm">100%</span>
                 </div>
                 <div>
-                    <span class="text-slate-500 block text-[10px]">Hair Symmetry</span>
-                    <span id="res-symmetry" class="font-black text-amber-400 text-sm">95%</span>
+                    <span class="text-slate-500 block text-[10px]">Density Coverage</span>
+                    <span id="res-density" class="font-black text-amber-400 text-sm">98%</span>
                 </div>
                 <div>
                     <span class="text-slate-500 block text-[10px]">Total Pay & Tip</span>
@@ -289,24 +295,48 @@
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(500, this.ctx.currentTime);
+                osc.frequency.setValueAtTime(550, this.ctx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(220, this.ctx.currentTime + 0.12);
                 gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
                 osc.connect(gain); gain.connect(this.ctx.destination);
                 osc.start(); osc.stop(this.ctx.currentTime + 0.12);
             }
+            playIncision() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.06);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.06);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.06);
+            }
             playPop(isClean = true) {
                 if (!this.ctx) return;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-                osc.type = isClean ? 'sine' : 'sawtooth';
-                osc.frequency.setValueAtTime(isClean ? 350 : 150, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(isClean ? 900 : 70, this.ctx.currentTime + 0.08);
+                osc.type = isClean ? 'sine' : 'square';
+                osc.frequency.setValueAtTime(isClean ? 400 : 120, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(isClean ? 950 : 60, this.ctx.currentTime + 0.08);
                 gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
                 osc.connect(gain); gain.connect(this.ctx.destination);
                 osc.start(); osc.stop(this.ctx.currentTime + 0.08);
+            }
+            playScream() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(600, this.ctx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.25);
             }
             playBeats() {
                 if (!this.ctx) return;
@@ -329,40 +359,37 @@
 
         // --- GAME STATE ---
         let state = {
-            cash: 650,
-            combo: 1,
-            harvestedCount: 0,
-            implantedCount: 0,
-            targetGrafts: 150,
+            cash: 850,
+            harvestedVault: 0,
+            targetGrafts: 120,
             patientSatisfaction: 100,
             patientPain: 0,
+            numbingLevel: 0, // 0 to 100% (Decays over time!)
             patientBPM: 72,
-            timeLeft: 180, // Seconds
-            currentPhase: 1, // 1: Anesthesia, 2: Harvest, 3: Implant
-            currentTool: 'anesthesia',
-            viewMode: 'front', // 'front' or 'scalp'
+            timeLeft: 210,
+            currentTool: 'anesthesia', // 'anesthesia', 'harvest', 'incision', 'implant'
+            viewMode: 'portrait', // 'portrait' (angled trainer) or 'crown' (top-down bald scalp)
             
-            // Follicles & Scalp Zones
+            // Zones & Micro-grafts
             anesthesiaZones: [],
             donorFollicles: [],
-            recipientSites: [],
-
-            // Pull Drag State
-            activeFollicle: null,
-            dragStartPos: null
+            scalpSlits: [],
+            
+            // Interaction Lockout
+            isLockedOut: false
         };
 
         const GYM_QUOTES = {
             happy: [
-                "Bro, make my temples look as full as my gains!",
+                "Bro, keep that numbing high! Pure gains!",
+                "Incision density is looking swole doc!",
                 "Symmetry is key for maximum aesthetics!",
-                "Clean angle doc! I'm feeling the pump!",
                 "Looking fresh for the gym floor!"
             ],
             pain: [
-                "Ouch! That hurt more than leg day!",
-                "Bro, watch the nerve block! No pain no gain?",
-                "Arrgh! Ease up on the pressure doc!",
+                "Ouch! That hurt way more than leg day!",
+                "Bro! Numbing ran out! I'm screaming!",
+                "Arrgh! Pain at 100%! I can't move!",
                 "My heart rate is spiking past cardio zones!"
             ]
         };
@@ -386,105 +413,98 @@
             window.addEventListener('resize', resizeCanvas);
             setupControls();
             startNewSurgery();
-            setInterval(gameTimerTick, 1000);
-            requestAnimationFrame(gameLoop);
+            setInterval(gameLoopStep, 1000); // 1-sec timer tick
+            setInterval(decayNumbingStep, 200); // Numbing decay step
+            requestAnimationFrame(renderLoop);
         });
 
         function startNewSurgery() {
-            state.cash = 650;
-            state.combo = 1;
-            state.harvestedCount = 0;
-            state.implantedCount = 0;
+            state.cash = 850;
+            state.harvestedVault = 0;
             state.patientSatisfaction = 100;
             state.patientPain = 0;
+            state.numbingLevel = 0;
             state.patientBPM = 72;
-            state.timeLeft = 180;
-            state.currentPhase = 1;
+            state.timeLeft = 210;
             state.currentTool = 'anesthesia';
-            state.viewMode = 'front';
+            state.viewMode = 'portrait';
+            state.isLockedOut = false;
 
             generateAnesthesiaZones();
             generateDonorFollicles();
-            generateRecipientSites();
+            generateTopDownSlits();
 
             selectTool('anesthesia');
-            updatePhaseUI();
             updateUI();
         }
 
-        // Generate Numbing Shot Zones
+        // Generate Numbing Injection Points
         function generateAnesthesiaZones() {
             state.anesthesiaZones = [];
-            const centerX = canvasSize / 2;
-            const centerY = canvasSize / 2;
-            
-            // Target temple and crown nerve points
+            const cx = canvasSize / 2;
+            const cy = canvasSize / 2;
+
             const points = [
-                { x: centerX - 65, y: centerY - 55 },
-                { x: centerX + 65, y: centerY - 55 },
-                { x: centerX - 85, y: centerY - 20 },
-                { x: centerX + 85, y: centerY - 20 },
-                { x: centerX, y: centerY - 80 }
+                { x: cx - 60, y: cy - 65 },
+                { x: cx + 60, y: cy - 65 },
+                { x: cx - 80, y: cy - 25 },
+                { x: cx + 80, y: cy - 25 },
+                { x: cx, y: cy - 90 }
             ];
 
             points.forEach(p => {
                 state.anesthesiaZones.push({
                     x: p.x, y: p.y,
-                    radius: 26,
-                    numbness: 0
+                    radius: 28,
+                    numbed: false
                 });
             });
         }
 
-        // Generate Back/Side Hair Donor Sites
+        // Generate Back/Side Hair Donor Sites (Portrait & Top-Down views)
         function generateDonorFollicles() {
             state.donorFollicles = [];
-            const centerX = canvasSize / 2;
-            const centerY = canvasSize / 2;
+            const cx = canvasSize / 2;
+            const cy = canvasSize / 2;
 
-            for (let i = 0; i < 180; i++) {
-                const angle = Math.PI * 0.15 + Math.random() * Math.PI * 0.7;
-                const dist = canvasSize * 0.35 + (Math.random() - 0.5) * 45;
-                const x = centerX + Math.cos(angle) * dist;
-                const y = centerY + Math.sin(angle) * dist;
-
-                const r = Math.random();
-                const graftType = r < 0.35 ? 1 : (r < 0.75 ? 2 : 3);
-
+            for (let i = 0; i < 150; i++) {
+                const angle = Math.PI * 0.12 + Math.random() * Math.PI * 0.76;
+                const dist = canvasSize * 0.36 + (Math.random() - 0.5) * 40;
                 state.donorFollicles.push({
-                    x, y,
-                    radius: 6,
-                    graftType,
+                    x: cx + Math.cos(angle) * dist,
+                    y: cy + Math.sin(angle) * dist,
+                    radius: 5,
                     extracted: false,
-                    angle: angle + (Math.random() - 0.5) * 0.4
+                    angle: angle
                 });
             }
         }
 
-        // Generate Receding Temples Target Slots (matching Trainer in image)
-        function generateRecipientSites() {
-            state.recipientSites = [];
-            const centerX = canvasSize / 2;
-            const centerY = canvasSize / 2 - 30;
+        // Generate TOP-DOWN BALD CROWN & TEMPLE Slit Slots
+        function generateTopDownSlits() {
+            state.scalpSlits = [];
+            const cx = canvasSize / 2;
+            const cy = canvasSize / 2;
 
-            // Receding Left & Right Temples
-            for (let side of [-1, 1]) {
-                for (let i = 0; i < 80; i++) {
-                    const tx = centerX + side * (35 + Math.random() * 45);
-                    const ty = centerY - (10 + Math.random() * 50);
+            // Receding M-Shape Forehead + Crown Bald Spot
+            for (let i = 0; i < 120; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * 75;
 
-                    state.recipientSites.push({
-                        x: tx, y: ty,
-                        radius: 7,
-                        implanted: false,
-                        graftType: 0,
-                        angle: -Math.PI / 2 + side * 0.2 // Ideal growth flow
-                    });
-                }
+                // Shape into receding hairline / crown area
+                const sx = cx + Math.cos(angle) * dist;
+                const sy = cy - 20 + Math.sin(angle) * (dist * 0.75);
+
+                state.scalpSlits.push({
+                    x: sx, y: sy,
+                    radius: 7,
+                    incised: false,
+                    implanted: false
+                });
             }
         }
 
-        // --- EVENT CONTROLS ---
+        // --- CONTROLS & LISTENERS ---
         function setupControls() {
             const getCoords = (e) => {
                 const rect = canvas.getBoundingClientRect();
@@ -496,50 +516,34 @@
                 };
             };
 
-            const handleStart = (e) => {
+            const handleAction = (e) => {
                 audio.init();
+                if (state.isLockedOut) return;
                 const pos = getCoords(e);
-                state.dragStartPos = pos;
-                onActionStart(pos);
+                executeSurgicalAction(pos);
             };
 
-            const handleMove = (e) => {
-                if (!state.dragStartPos) return;
-                const pos = getCoords(e);
-                onActionMove(pos);
-            };
+            canvas.addEventListener('mousedown', handleAction);
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleAction(e); }, { passive: false });
 
-            const handleEnd = () => {
-                if (state.activeFollicle) {
-                    onFollicleRelease();
-                }
-                state.dragStartPos = null;
-                document.getElementById('pull-guide').classList.add('hidden');
-            };
-
-            canvas.addEventListener('mousedown', handleStart);
-            canvas.addEventListener('mousemove', handleMove);
-            window.addEventListener('mouseup', handleEnd);
-
-            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleStart(e); }, { passive: false });
-            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, { passive: false });
-            window.addEventListener('touchend', handleEnd);
-
-            // Tools switching
+            // Tool Switcher Buttons
             document.querySelectorAll('.tool-btn').forEach(btn => {
-                btn.addEventListener('click', () => selectTool(btn.dataset.tool));
+                btn.addEventListener('click', () => {
+                    if (state.isLockedOut) return;
+                    selectTool(btn.dataset.tool);
+                });
             });
 
-            // Phase switching button
-            document.getElementById('switch-phase-btn').addEventListener('click', toggleNextPhase);
-
-            // View mode switch button (Front face vs Donor scalp)
-            document.getElementById('view-toggle-btn').addEventListener('click', () => {
-                state.viewMode = state.viewMode === 'front' ? 'scalp' : 'front';
-                document.getElementById('view-toggle-text').innerText = state.viewMode === 'front' ? 'Donor Scalp' : 'Front Face';
+            // Emergency Numbing Button
+            document.getElementById('emergency-numb-btn').addEventListener('click', () => {
+                state.numbingLevel = Math.min(100, state.numbingLevel + 60);
+                state.patientPain = Math.max(0, state.patientPain - 40);
+                checkPainLockout();
+                audio.playInject();
+                updateUI();
             });
 
-            // Soothing tools
+            // Soothing Tools
             document.getElementById('calm-ice-btn').addEventListener('click', () => applyCalm('ice'));
             document.getElementById('calm-spray-btn').addEventListener('click', () => applyCalm('spray'));
             document.getElementById('calm-music-btn').addEventListener('click', () => applyCalm('music'));
@@ -554,163 +558,141 @@
 
         function selectTool(tool) {
             state.currentTool = tool;
+
+            // Automatically switch view based on step
+            if (tool === 'anesthesia' || tool === 'harvest') {
+                state.viewMode = 'portrait';
+                document.getElementById('view-label').innerText = "Angled Portrait";
+            } else {
+                state.viewMode = 'crown';
+                document.getElementById('view-label').innerText = "Top-Down Crown";
+            }
+
+            // Update UI Badges & Buttons
+            const badge = document.getElementById('phase-badge');
+            const status = document.getElementById('step-status');
+
             document.querySelectorAll('.tool-btn').forEach(b => {
                 if (b.dataset.tool === tool) {
-                    b.classList.add('active', 'bg-teal-500/20', 'border-teal-400', 'text-teal-300');
+                    b.classList.add('active', 'bg-sky-500/20', 'border-sky-400', 'text-sky-300');
                     b.classList.remove('bg-slate-800', 'border-slate-700', 'text-slate-400');
                 } else {
-                    b.classList.remove('active', 'bg-teal-500/20', 'border-teal-400', 'text-teal-300');
+                    b.classList.remove('active', 'bg-sky-500/20', 'border-sky-400', 'text-sky-300');
                     b.classList.add('bg-slate-800', 'border-slate-700', 'text-slate-400');
                 }
             });
-        }
 
-        function toggleNextPhase() {
-            if (state.currentPhase === 1) {
-                state.currentPhase = 2;
-                state.viewMode = 'scalp';
-                selectTool('harvest');
-            } else if (state.currentPhase === 2) {
-                state.currentPhase = 3;
-                state.viewMode = 'front';
-                selectTool('implant');
-            } else {
-                state.currentPhase = 1;
-                state.viewMode = 'front';
-                selectTool('anesthesia');
-            }
-            document.getElementById('view-toggle-text').innerText = state.viewMode === 'front' ? 'Donor Scalp' : 'Front Face';
-            updatePhaseUI();
-        }
-
-        function updatePhaseUI() {
-            const badge = document.getElementById('phase-badge');
-            const phaseBtnText = document.getElementById('phase-btn-text');
-
-            if (state.currentPhase === 1) {
-                badge.innerHTML = `<i class="fa-solid fa-syringe"></i> Phase 1: Local Anesthesia`;
-                badge.className = "absolute top-2.5 left-2.5 bg-sky-500 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1";
-                phaseBtnText.innerText = "Harvest Phase";
-            } else if (state.currentPhase === 2) {
+            if (tool === 'anesthesia') {
+                badge.innerHTML = `<i class="fa-solid fa-syringe"></i> Phase 1: Anesthesia`;
+                status.innerText = "Step 1: Numb Scalp";
+            } else if (tool === 'harvest') {
                 badge.innerHTML = `<i class="fa-solid fa-scissors"></i> Phase 2: Graft Harvesting`;
-                badge.className = "absolute top-2.5 left-2.5 bg-amber-500 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1";
-                phaseBtnText.innerText = "Implant Phase";
-            } else {
-                badge.innerHTML = `<i class="fa-solid fa-hand-holding-medical"></i> Phase 3: Temple Implanting`;
-                badge.className = "absolute top-2.5 left-2.5 bg-emerald-400 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1";
-                phaseBtnText.innerText = "Numb Phase";
+                status.innerText = "Step 2: Harvest Grafts";
+            } else if (tool === 'incision') {
+                badge.innerHTML = `<i class="fa-solid fa-scalpel"></i> Phase 3: Slit Incisions`;
+                status.innerText = "Step 3: Make Incisions";
+            } else if (tool === 'implant') {
+                badge.innerHTML = `<i class="fa-solid fa-hand-holding-medical"></i> Phase 4: Implanting Grafts`;
+                status.innerText = "Step 4: Plant Grafts";
             }
         }
 
-        // --- INTERACTION LOGIC ---
-        function onActionStart(pos) {
+        // --- SURGICAL ACTIONS & NUMBING RIGID LOGIC ---
+        function executeSurgicalAction(pos) {
+            // Check Numbing Status
+            const isNumb = state.numbingLevel > 25;
+            const painIncrement = isNumb ? 2 : 20; // 3X PAIN IF NOT NUMBED!
+
             if (state.currentTool === 'anesthesia') {
                 const zone = state.anesthesiaZones.find(z => Math.hypot(z.x - pos.x, z.y - pos.y) < z.radius * 1.5);
                 if (zone) {
-                    zone.numbness = Math.min(100, zone.numbness + 50);
+                    state.numbingLevel = Math.min(100, state.numbingLevel + 35);
+                    zone.numbed = true;
                     audio.playInject();
                     spawnFloatingText(pos.x, pos.y, "NUMBED! 💉", "#38bdf8");
                     triggerSpeech('happy');
-                    updateUI();
                 }
-            } else if (state.currentTool === 'harvest' && state.viewMode === 'scalp') {
-                const follicle = state.donorFollicles.find(f => !f.extracted && Math.hypot(f.x - pos.x, f.y - pos.y) < f.radius * 2.2);
+            } 
+            else if (state.currentTool === 'harvest' && state.viewMode === 'portrait') {
+                const follicle = state.donorFollicles.find(f => !f.extracted && Math.hypot(f.x - pos.x, f.y - pos.y) < f.radius * 2.5);
                 if (follicle) {
-                    state.activeFollicle = follicle;
-                    const guide = document.getElementById('pull-guide');
-                    guide.classList.remove('hidden');
-                    guide.style.left = `${pos.x - 40}px`;
-                    guide.style.top = `${pos.y - 40}px`;
+                    follicle.extracted = true;
+                    state.harvestedVault++;
+                    state.cash += 15;
+                    audio.playPop(true);
+                    spawnFloatingText(pos.x, pos.y, "HARVESTED! ✂️", "#2dd4bf");
+
+                    applyPain(painIncrement);
                 }
-            } else if (state.currentTool === 'implant' && state.viewMode === 'front') {
-                if (state.harvestedCount <= state.implantedCount) {
+            } 
+            else if (state.currentTool === 'incision' && state.viewMode === 'crown') {
+                const slit = state.scalpSlits.find(s => !s.incised && Math.hypot(s.x - pos.x, s.y - pos.y) < s.radius * 2.5);
+                if (slit) {
+                    slit.incised = true;
+                    audio.playIncision();
+                    spawnFloatingText(pos.x, pos.y, "SLIT CUT! 🔪", "#f59e0b");
+
+                    applyPain(painIncrement);
+                }
+            } 
+            else if (state.currentTool === 'implant' && state.viewMode === 'crown') {
+                if (state.harvestedVault <= 0) {
                     audio.playPop(false);
-                    spawnFloatingText(pos.x, pos.y, "NO GRAFTS!", "#f43f5e");
+                    spawnFloatingText(pos.x, pos.y, "NO GRAFTS IN VAULT!", "#f43f5e");
                     return;
                 }
 
-                const site = state.recipientSites.find(s => !s.implanted && Math.hypot(s.x - pos.x, s.y - pos.y) < s.radius * 2.2);
-                if (site) {
-                    const isNumb = checkNumbness(site.x, site.y);
-                    site.implanted = true;
-                    site.graftType = 2; // Quality graft
-                    state.implantedCount++;
-
-                    state.combo++;
-                    const earned = 20 * state.combo;
-                    state.cash += earned;
-
+                const slit = state.scalpSlits.find(s => s.incised && !s.implanted && Math.hypot(s.x - pos.x, s.y - pos.y) < s.radius * 2.5);
+                if (slit) {
+                    slit.implanted = true;
+                    state.harvestedVault--;
                     audio.playPop(true);
-                    spawnFloatingText(pos.x, pos.y, `PLANTED! +$${earned}`, "#34d399");
+                    spawnFloatingText(pos.x, pos.y, "PLANTED! 🌱", "#34d399");
 
-                    if (!isNumb) increasePain(12);
-                    else triggerSpeech('happy');
-
-                    updateUI();
+                    applyPain(painIncrement);
+                } else {
+                    const unincised = state.scalpSlits.find(s => !s.incised && Math.hypot(s.x - pos.x, s.y - pos.y) < s.radius * 2.5);
+                    if (unincised) {
+                        audio.playPop(false);
+                        spawnFloatingText(pos.x, pos.y, "MAKE INCISION FIRST!", "#f43f5e");
+                    }
                 }
             }
-        }
 
-        function onActionMove(pos) {
-            if (state.activeFollicle && state.dragStartPos) {
-                const dx = pos.x - state.dragStartPos.x;
-                const dy = pos.y - state.dragStartPos.y;
-                const dist = Math.hypot(dx, dy);
-
-                if (dist > 30) {
-                    const dragAngle = Math.atan2(dy, dx);
-                    let angleDiff = Math.abs(dragAngle - state.activeFollicle.angle);
-                    if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
-                    onFollicleRelease(angleDiff);
-                }
-            }
-        }
-
-        function onFollicleRelease(angleDiff = 0) {
-            if (!state.activeFollicle) return;
-
-            const f = state.activeFollicle;
-            const isNumb = checkNumbness(f.x, f.y);
-
-            if (angleDiff <= 0.85) {
-                // Perfect extraction aligned with root angle
-                f.extracted = true;
-                state.harvestedCount++;
-                state.combo++;
-                const earned = f.graftType * 15 * state.combo;
-                state.cash += earned;
-
-                audio.playPop(true);
-                spawnFloatingText(f.x, f.y, `PERFECT ROOT! (+$${earned})`, "#2dd4bf");
-
-                if (!isNumb) increasePain(7);
-                else triggerSpeech('happy');
-            } else {
-                // Damaged root
-                f.extracted = true;
-                audio.playPop(false);
-                spawnFloatingText(f.x, f.y, "ROOT DAMAGED! ⚠️", "#f43f5e");
-                increasePain(16);
-                state.combo = 1;
-            }
-
-            state.activeFollicle = null;
-            document.getElementById('pull-guide').classList.add('hidden');
             updateUI();
         }
 
-        function checkNumbness(x, y) {
-            const z = state.anesthesiaZones.find(zone => Math.hypot(zone.x - x, zone.y - y) < zone.radius * 2);
-            return z && z.numbness > 30;
-        }
-
-        function increasePain(amount) {
+        // Apply Pain and Trigger 100% Pain Hard Cap Lockout
+        function applyPain(amount) {
             state.patientPain = Math.min(100, state.patientPain + amount);
-            state.patientSatisfaction = Math.max(0, state.patientSatisfaction - amount * 0.45);
-            state.patientBPM = Math.min(160, 72 + Math.round(state.patientPain * 0.85));
+            state.patientSatisfaction = Math.max(0, state.patientSatisfaction - amount * 0.35);
+            state.patientBPM = Math.min(170, 72 + Math.round(state.patientPain * 0.95));
 
-            triggerSpeech('pain');
-            updateUI();
+            if (amount > 10) {
+                audio.playScream();
+                triggerSpeech('pain');
+            }
+
+            checkPainLockout();
+        }
+
+        function checkPainLockout() {
+            const lockoutBanner = document.getElementById('pain-lockout-banner');
+            if (state.patientPain >= 100) {
+                state.isLockedOut = true;
+                lockoutBanner.classList.remove('hidden');
+            } else {
+                state.isLockedOut = false;
+                lockoutBanner.classList.add('hidden');
+            }
+        }
+
+        // Temporary Numbing Decay Step (~3% decay per sec)
+        function decayNumbingStep() {
+            if (state.numbingLevel > 0) {
+                state.numbingLevel = Math.max(0, state.numbingLevel - 0.8);
+                updateUI();
+            }
         }
 
         function applyCalm(type) {
@@ -721,16 +703,16 @@
                 state.patientPain = Math.max(0, state.patientPain - 15);
                 spawnFloatingText(canvasSize / 2, canvasSize / 2, "ICE PACK APPLIED! ❄️", "#38bdf8");
             } else if (type === 'spray') {
+                state.numbingLevel = Math.min(100, state.numbingLevel + 35);
                 state.patientPain = Math.max(0, state.patientPain - 10);
                 spawnFloatingText(canvasSize / 2, canvasSize / 2, "LIDOCAINE SPRAY! 💉", "#2dd4bf");
             } else if (type === 'music') {
                 state.patientPain = Math.max(0, state.patientPain - 8);
-                state.patientSatisfaction = Math.min(100, state.patientSatisfaction + 10);
+                state.patientSatisfaction = Math.min(100, state.patientSatisfaction + 8);
                 spawnFloatingText(canvasSize / 2, canvasSize / 2, "GYM BEATS PUMPING! 🎵", "#c084fc");
             }
 
-            state.patientBPM = Math.max(72, 72 + Math.round(state.patientPain * 0.85));
-            triggerSpeech('happy');
+            checkPainLockout();
             updateUI();
         }
 
@@ -740,7 +722,7 @@
             document.getElementById('patient-speech').innerText = `"${quote}"`;
         }
 
-        function gameTimerTick() {
+        function gameLoopStep() {
             if (state.timeLeft > 0) {
                 state.timeLeft--;
                 const mins = Math.floor(state.timeLeft / 60).toString().padStart(2, '0');
@@ -749,209 +731,21 @@
             }
         }
 
-        // --- RENDER GAME LOOP & REALISTIC GYM PERSONAL TRAINER PORTRAIT ---
-        function gameLoop() {
-            renderSurgeryStage();
+        function updateUI() {
+            document.getElementById('cash-display').innerText = `$${state.cash}`;
+            document.getElementById('graft-vault').innerText = `${state.harvestedVault} Harvested`;
 
-            const emojiEl = document.getElementById('patient-emoji');
-            const sweatEl = document.getElementById('sweat-icon');
+            document.getElementById('numb-bar').style.width = `${state.numbingLevel}%`;
+            document.getElementById('numb-val').innerText = `${Math.round(state.numbingLevel)}%`;
 
-            if (state.patientPain > 50) {
-                emojiEl.innerText = "😫";
-                sweatEl.classList.remove('hidden');
-            } else if (state.patientPain > 25) {
-                emojiEl.innerText = "😬";
-                sweatEl.classList.remove('hidden');
-            } else {
-                emojiEl.innerText = "💪";
-                sweatEl.classList.add('hidden');
-            }
+            document.getElementById('pain-bar').style.width = `${state.patientPain}%`;
+            document.getElementById('pain-val').innerText = `${Math.round(state.patientPain)}%`;
+            document.getElementById('bpm-display').innerText = state.patientBPM;
 
-            requestAnimationFrame(gameLoop);
+            const implantedCount = state.scalpSlits.filter(s => s.implanted).length;
+            document.getElementById('graft-counter').innerText = `${implantedCount} / ${state.targetGrafts} Grafts`;
         }
 
-        function renderSurgeryStage() {
-            ctx.clearRect(0, 0, canvasSize, canvasSize);
-
-            const cx = canvasSize / 2;
-            const cy = canvasSize / 2;
-
-            if (state.viewMode === 'front') {
-                // --- VIEW 1: FRONT PORTRAIT MATCHING THE PERSONAL TRAINER IMAGE ---
-
-                // 1. Gym Background (Window frames & Gym Bike silhouette)
-                ctx.fillStyle = '#111827';
-                ctx.fillRect(0, 0, canvasSize, canvasSize);
-
-                // Window Frames
-                ctx.strokeStyle = '#374151';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(20, 20, 140, 100);
-                ctx.strokeRect(180, 20, 140, 100);
-
-                // Exercise Bike Silhouette
-                ctx.fillStyle = '#1f2937';
-                ctx.beginPath();
-                ctx.arc(60, 220, 25, 0, Math.PI * 2); // Bike wheel
-                ctx.fill();
-
-                // 2. Gym V-Neck Shirt & Body Silhouette
-                ctx.fillStyle = '#1e293b'; // Dark Grey V-neck shirt
-                ctx.beginPath();
-                ctx.moveTo(cx - 100, canvasSize);
-                ctx.lineTo(cx - 50, cy + 90);
-                ctx.lineTo(cx, cy + 120); // V-neck center point
-                ctx.lineTo(cx + 50, cy + 90);
-                ctx.lineTo(cx + 100, canvasSize);
-                ctx.fill();
-
-                // Shirt Mirror Text "PERSONAL TRAINER"
-                ctx.fillStyle = '#f8fafc';
-                ctx.font = 'bold 11px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText("ЯƎИIАЯТ JAИOƧЯƎP", cx, cy + 145);
-
-                // 3. Neck
-                ctx.fillStyle = '#dfa27a';
-                ctx.fillRect(cx - 32, cy + 40, 64, 60);
-
-                // 4. Face Structure (Light Tan Skin)
-                ctx.fillStyle = '#ebaf88';
-                ctx.beginPath();
-                ctx.ellipse(cx, cy, 72, 92, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Facial Features: Eyes & Brown Irises
-                for (let side of [-1, 1]) {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.beginPath();
-                    ctx.ellipse(cx + side * 26, cy - 8, 10, 7, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    ctx.fillStyle = '#543310'; // Brown eyes
-                    ctx.beginPath();
-                    ctx.arc(cx + side * 26, cy - 8, 4.5, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-
-                // Nose
-                ctx.strokeStyle = '#c6845c';
-                ctx.lineWidth = 2.5;
-                ctx.beginPath();
-                ctx.moveTo(cx, cy - 12);
-                ctx.lineTo(cx + 4, cy + 16);
-                ctx.lineTo(cx - 6, cy + 20);
-                ctx.stroke();
-
-                // Mouth
-                ctx.strokeStyle = '#a65e38';
-                ctx.beginPath();
-                ctx.moveTo(cx - 16, cy + 38);
-                ctx.lineTo(cx + 16, cy + 38);
-                ctx.stroke();
-
-                // Light Brown Stubble / Beard around jaw, chin & cheeks
-                ctx.fillStyle = 'rgba(84, 51, 16, 0.35)';
-                ctx.beginPath();
-                ctx.arc(cx, cy + 25, 52, 0.2 * Math.PI, 0.8 * Math.PI);
-                ctx.fill();
-
-                // 5. Existing Brown Messy Hair + Receding Temples (Matching the photo)
-                ctx.fillStyle = '#3d2314'; // Dark brown hair
-                // Top Messy Spikes
-                ctx.beginPath();
-                ctx.ellipse(cx, cy - 80, 50, 22, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Messy Strands
-                for (let h = -40; h <= 40; h += 10) {
-                    ctx.beginPath();
-                    ctx.moveTo(cx + h, cy - 80);
-                    ctx.lineTo(cx + h + (Math.random() - 0.5) * 15, cy - 102);
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = '#3d2314';
-                    ctx.stroke();
-                }
-
-                // Receding Temple Forehead Outlines
-                ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([3, 3]);
-                ctx.strokeRect(cx - 65, cy - 65, 30, 30); // Left receding temple
-                ctx.strokeRect(cx + 35, cy - 65, 30, 30); // Right receding temple
-                ctx.setLineDash([]);
-
-                // 6. Implanted Grafts on Receding Temples
-                state.recipientSites.forEach(s => {
-                    if (s.implanted) {
-                        ctx.beginPath();
-                        ctx.arc(s.x, s.y, 2, 0, Math.PI * 2);
-                        ctx.fillStyle = '#10b981';
-                        ctx.fill();
-
-                        ctx.strokeStyle = '#3d2314';
-                        ctx.lineWidth = 2;
-                        ctx.beginPath();
-                        ctx.moveTo(s.x, s.y);
-                        ctx.lineTo(s.x, s.y + 8);
-                        ctx.stroke();
-                    } else if (state.currentPhase === 3) {
-                        ctx.beginPath();
-                        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
-                        ctx.fillStyle = 'rgba(244, 63, 94, 0.15)';
-                        ctx.fill();
-                    }
-                });
-
-                // Numbing Shot Zones
-                if (state.currentPhase === 1) {
-                    state.anesthesiaZones.forEach(z => {
-                        ctx.beginPath();
-                        ctx.arc(z.x, z.y, z.radius, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(56, 189, 248, ${0.15 + (z.numbness / 100) * 0.35})`;
-                        ctx.fill();
-                        ctx.strokeStyle = '#38bdf8';
-                        ctx.lineWidth = 1.5;
-                        ctx.stroke();
-                    });
-                }
-
-            } else {
-                // --- VIEW 2: DONOR SCALP VIEW (BACK OF HEAD) ---
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(0, 0, canvasSize, canvasSize);
-
-                // Scalp Outline
-                ctx.fillStyle = '#ebaf88';
-                ctx.beginPath();
-                ctx.arc(cx, cy, canvasSize * 0.4, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Donor Follicles
-                state.donorFollicles.forEach(f => {
-                    if (f.extracted) {
-                        ctx.beginPath();
-                        ctx.arc(f.x, f.y, 2, 0, Math.PI * 2);
-                        ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
-                        ctx.fill();
-                    } else {
-                        ctx.beginPath();
-                        ctx.arc(f.x, f.y, 2.5, 0, Math.PI * 2);
-                        ctx.fillStyle = '#3d2314';
-                        ctx.fill();
-
-                        ctx.strokeStyle = '#3d2314';
-                        ctx.lineWidth = 1.8;
-                        ctx.beginPath();
-                        ctx.moveTo(f.x, f.y);
-                        ctx.lineTo(f.x + Math.cos(f.angle) * 10, f.y + Math.sin(f.angle) * 10);
-                        ctx.stroke();
-                    }
-                });
-            }
-        }
-
-        // --- FLOATING TEXT ---
         function spawnFloatingText(x, y, text, color) {
             const container = document.getElementById('floating-overlay');
             const el = document.createElement('div');
@@ -964,45 +758,281 @@
             setTimeout(() => el.remove(), 850);
         }
 
-        function updateUI() {
-            document.getElementById('cash-display').innerText = `$${state.cash}`;
-            document.getElementById('combo-display').innerText = `${state.combo}x Multiplier`;
+        // --- RENDER LOOP (EXACT PORTRAIT LIKENESS + TOP-DOWN CROWN BALD VIEW) ---
+        function renderLoop() {
+            ctx.clearRect(0, 0, canvasSize, canvasSize);
 
-            document.getElementById('satis-bar').style.width = `${state.patientSatisfaction}%`;
-            document.getElementById('satis-val').innerText = `${Math.round(state.patientSatisfaction)}%`;
+            if (state.viewMode === 'portrait') {
+                renderPortraitView();
+            } else {
+                renderCrownView();
+            }
 
-            document.getElementById('pain-bar').style.width = `${state.patientPain}%`;
-            document.getElementById('pain-val').innerText = `${Math.round(state.patientPain)}%`;
-            document.getElementById('bpm-display').innerText = state.patientBPM;
+            // Avatar Emoji Shift
+            const emojiEl = document.getElementById('patient-emoji');
+            const sweatEl = document.getElementById('sweat-icon');
 
-            document.getElementById('graft-counter').innerText = `${state.implantedCount} / ${state.targetGrafts} Grafts`;
+            if (state.patientPain >= 80) {
+                emojiEl.innerText = "😭";
+                sweatEl.classList.remove('hidden');
+            } else if (state.patientPain >= 40) {
+                emojiEl.innerText = "😬";
+                sweatEl.classList.remove('hidden');
+            } else {
+                emojiEl.innerText = "💪";
+                sweatEl.classList.add('hidden');
+            }
+
+            requestAnimationFrame(renderLoop);
         }
 
-        // --- SURGERY FINISH & TRANSFORMATION TIMELAPSE ---
+        // VIEW 1: EXACT CHARACTER ILLUSTRATION FROM PHOTO
+        function renderPortraitView() {
+            const cx = canvasSize / 2;
+            const cy = canvasSize / 2 + 10;
+
+            // 1. Gym Background (Window frames & Pull-up bar silhouette)
+            ctx.fillStyle = '#0a0f1d';
+            ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(20, 20, 140, 110);
+            ctx.strokeRect(180, 20, 140, 110);
+
+            // Pull-up Gym Rack
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(30, 0); ctx.lineTo(30, 80); ctx.lineTo(320, 80); ctx.lineTo(320, 0);
+            ctx.stroke();
+
+            // 2. Body: Dark Charcoal V-Neck T-Shirt
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.moveTo(cx - 110, canvasSize);
+            ctx.lineTo(cx - 55, cy + 85);
+            ctx.lineTo(cx, cy + 120); // Deep V-neck point
+            ctx.lineTo(cx + 55, cy + 85);
+            ctx.lineTo(cx + 110, canvasSize);
+            ctx.fill();
+
+            // Mirror Text "PERSONAL TRAINER"
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("ЯƎИIАЯТ JAИOƧЯƎP", cx, cy + 145);
+
+            // 3. Neck & Skin (Facial Color shifted if in high pain)
+            ctx.fillStyle = state.patientPain > 80 ? '#fca5a5' : '#e0a078';
+            ctx.fillRect(cx - 32, cy + 35, 64, 58);
+
+            // 4. Face Structure (Defined jaw line & cheekbones from photo)
+            ctx.fillStyle = state.patientPain > 80 ? '#fca5a5' : '#eba078';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 5, 70, 88, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 5. Expressive Eyes & Dark Eyebrows
+            for (let side of [-1, 1]) {
+                const ex = cx + side * 25;
+                const ey = cy - 12;
+
+                // White Eye
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.ellipse(ex, ey, 10, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Dark Brown Iris
+                ctx.fillStyle = '#3d2314';
+                ctx.beginPath();
+                ctx.arc(ex, ey, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Dark Eyebrows
+                ctx.strokeStyle = '#26140a';
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(ex - 12, ey - 10 + (state.patientPain > 50 ? -3 : 0));
+                ctx.lineTo(ex + 12, ey - 8 + (state.patientPain > 50 ? 3 : 0));
+                ctx.stroke();
+            }
+
+            // Prominent Nose
+            ctx.strokeStyle = '#b8754e';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - 18);
+            ctx.lineTo(cx + 4, cy + 12);
+            ctx.lineTo(cx - 5, cy + 16);
+            ctx.stroke();
+
+            // Mouth (Grimacing if in pain)
+            ctx.strokeStyle = '#8f4322';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            if (state.patientPain > 60) {
+                ctx.arc(cx, cy + 42, 12, Math.PI, 0); // Grimace
+            } else {
+                ctx.moveTo(cx - 15, cy + 36);
+                ctx.lineTo(cx + 15, cy + 36); // Neutral
+            }
+            ctx.stroke();
+
+            // Stubble / Light Beard along jaw, chin, upper lip
+            ctx.fillStyle = 'rgba(38, 20, 10, 0.4)';
+            ctx.beginPath();
+            ctx.arc(cx, cy + 22, 52, 0.15 * Math.PI, 0.85 * Math.PI);
+            ctx.fill();
+
+            // 6. Dark Brown Messy Hair + Receding Temples (Photo Match)
+            ctx.fillStyle = '#26140a';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 82, 48, 20, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Messy Spikes
+            for (let h = -38; h <= 38; h += 8) {
+                ctx.beginPath();
+                ctx.moveTo(cx + h, cy - 82);
+                ctx.lineTo(cx + h + (Math.random() - 0.5) * 14, cy - 104);
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#26140a';
+                ctx.stroke();
+            }
+
+            // Donor Area Follicles
+            state.donorFollicles.forEach(f => {
+                if (f.extracted) {
+                    ctx.beginPath();
+                    ctx.arc(f.x, f.y, 2, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+                    ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(f.x, f.y, 2.5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#26140a';
+                    ctx.fill();
+                }
+            });
+
+            // Anesthesia Zones Indicator
+            if (state.currentTool === 'anesthesia') {
+                state.anesthesiaZones.forEach(z => {
+                    ctx.beginPath();
+                    ctx.arc(z.x, z.y, z.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = z.numbed ? 'rgba(56, 189, 248, 0.35)' : 'rgba(56, 189, 248, 0.15)';
+                    ctx.fill();
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                });
+            }
+        }
+
+        // VIEW 2: TOP-DOWN BALD CROWN & TEMPLE SCALP VIEW
+        function renderCrownView() {
+            const cx = canvasSize / 2;
+            const cy = canvasSize / 2;
+
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+            // Nose Direction Indicator (Top)
+            ctx.fillStyle = '#eba078';
+            ctx.beginPath();
+            ctx.moveTo(cx - 15, cy - 135);
+            ctx.lineTo(cx, cy - 155);
+            ctx.lineTo(cx + 15, cy - 135);
+            ctx.fill();
+
+            // Ears at sides
+            ctx.beginPath();
+            ctx.ellipse(cx - 135, cy, 12, 22, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 135, cy, 12, 22, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Main Scalp Oval
+            ctx.fillStyle = state.patientPain > 80 ? '#fca5a5' : '#eba078';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, 130, 140, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Donor Hair Ring (Sides & Back)
+            ctx.strokeStyle = '#26140a';
+            ctx.lineWidth = 18;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 120, 0.15 * Math.PI, 0.85 * Math.PI);
+            ctx.stroke();
+
+            // Receding M-Shape Forehead / Bald Crown Area Outline
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 20, 75, 55, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
+            ctx.setLineDash([4, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Slits & Implanted Hair
+            state.scalpSlits.forEach(s => {
+                if (s.implanted) {
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, 2.5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#10b981';
+                    ctx.fill();
+
+                    // Grown hair strand
+                    ctx.strokeStyle = '#26140a';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(s.x, s.y);
+                    ctx.lineTo(s.x, s.y + 6);
+                    ctx.stroke();
+                } else if (s.incised) {
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(s.x - 3, s.y);
+                    ctx.lineTo(s.x + 3, s.y);
+                    ctx.stroke();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+                    ctx.fill();
+                }
+            });
+        }
+
+        // --- SURGERY FINISH & TIMELAPSE ---
         function finishSurgery() {
             audio.playBeats();
 
-            const ratio = state.implantedCount / state.targetGrafts;
+            const implantedCount = state.scalpSlits.filter(s => s.implanted).length;
+            const ratio = implantedCount / state.targetGrafts;
             let grade = 'F';
-            let likes = '150';
+            let likes = '250';
 
-            if (ratio >= 0.9 && state.patientSatisfaction >= 80) {
-                grade = 'GRADE S'; likes = '12.8k';
-            } else if (ratio >= 0.7 && state.patientSatisfaction >= 65) {
-                grade = 'GRADE A'; likes = '6.4k';
+            if (ratio >= 0.85 && state.patientSatisfaction >= 75) {
+                grade = 'GRADE S'; likes = '14.2k';
+            } else if (ratio >= 0.65 && state.patientSatisfaction >= 60) {
+                grade = 'GRADE A'; likes = '7.1k';
             } else if (ratio >= 0.4) {
-                grade = 'GRADE B'; likes = '2.1k';
+                grade = 'GRADE B'; likes = '2.8k';
             } else {
-                grade = 'GRADE C'; likes = '800';
+                grade = 'GRADE C'; likes = '950';
             }
 
             document.getElementById('res-grade').innerText = grade;
             document.getElementById('res-likes').innerText = `❤️ ${likes}`;
-            document.getElementById('res-implants').innerText = `${state.implantedCount} Grafts`;
+            document.getElementById('res-implants').innerText = `${implantedCount} Grafts`;
             document.getElementById('res-satisfaction').innerText = `${Math.round(state.patientSatisfaction)}%`;
-            document.getElementById('res-symmetry').innerText = `${Math.min(100, Math.round(ratio * 95))}%`;
+            document.getElementById('res-density').innerText = `${Math.min(100, Math.round(ratio * 98))}%`;
 
-            const totalEarnings = state.cash + Math.round(state.implantedCount * 12);
+            const totalEarnings = state.cash + Math.round(implantedCount * 14);
             document.getElementById('res-cash').innerText = `$${totalEarnings}`;
 
             renderTimelapse();
@@ -1015,36 +1045,35 @@
             tCanvas.width = 192;
             tCanvas.height = 192;
 
-            // Background Gym
-            tCtx.fillStyle = '#111827';
+            // Background
+            tCtx.fillStyle = '#0a0f1d';
             tCtx.fillRect(0, 0, 192, 192);
 
             // Portrait Base
-            tCtx.fillStyle = '#ebaf88';
+            tCtx.fillStyle = '#eba078';
             tCtx.beginPath();
             tCtx.ellipse(96, 96, 48, 62, 0, 0, Math.PI * 2);
             tCtx.fill();
 
             // Eyes & Stubble
-            tCtx.fillStyle = '#543310';
+            tCtx.fillStyle = '#26140a';
             tCtx.beginPath();
             tCtx.arc(78, 90, 3, 0, Math.PI * 2);
             tCtx.arc(114, 90, 3, 0, Math.PI * 2);
             tCtx.fill();
 
-            // 12-Month Full Restored Thick Temples Hairline!
-            tCtx.fillStyle = '#3d2314';
+            // 12-Month Full Restored Hairline!
+            tCtx.fillStyle = '#26140a';
             tCtx.beginPath();
-            tCtx.ellipse(96, 48, 48, 22, 0, 0, Math.PI * 2);
+            tCtx.ellipse(96, 46, 48, 22, 0, 0, Math.PI * 2);
             tCtx.fill();
 
-            // Full density hair strands covering temples
-            for (let i = 40; i <= 150; i += 4) {
-                tCtx.strokeStyle = '#3d2314';
+            for (let i = 40; i <= 150; i += 3) {
+                tCtx.strokeStyle = '#26140a';
                 tCtx.lineWidth = 2;
                 tCtx.beginPath();
-                tCtx.moveTo(i, 52);
-                tCtx.lineTo(i + (Math.random() - 0.5) * 8, 32);
+                tCtx.moveTo(i, 50);
+                tCtx.lineTo(i + (Math.random() - 0.5) * 8, 28);
                 tCtx.stroke();
             }
         }
