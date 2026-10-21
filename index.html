@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hair Transplant Simulator: Follicle Master!</title>
+    <title>Hair Transplant Simulator: Master Surgeon Edition!</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -18,98 +18,106 @@
         }
         body {
             font-family: 'Fredoka', cursive, sans-serif;
-            background-color: #1a202c;
-            color: #f7fafc;
+            background-color: #0f172a;
+            color: #f8fafc;
             overflow: hidden;
-        }
-        .arcade-font {
-            font-family: 'Nunito', sans-serif;
-        }
-        .bg-clinic {
-            background: radial-gradient(circle at center, #2a4365 0%, #1a202c 100%);
         }
         .btn-arcade {
             transition: transform 0.1s, box-shadow 0.1s;
-            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+            box-shadow: 0 5px 0 rgba(0, 0, 0, 0.4);
         }
         .btn-arcade:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
         }
-        .pulse-glow {
-            animation: pulse-glow-anim 1.5s infinite alternate;
+        .pulse-heart {
+            animation: heart-beat 1s infinite alternate ease-in-out;
         }
-        @keyframes pulse-glow-anim {
-            0% { box-shadow: 0 0 10px rgba(56, 178, 172, 0.5); }
-            100% { box-shadow: 0 0 25px rgba(56, 178, 172, 0.9); }
+        @keyframes heart-beat {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.15); }
         }
-        /* Custom scrollbar for mobile menus */
-        ::-webkit-scrollbar {
-            width: 6px;
+        .float-text {
+            animation: float-up 0.9s ease-out forwards;
+            position: absolute;
+            pointer-events: none;
+            font-weight: 900;
+            z-index: 50;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
+        @keyframes float-up {
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            50% { transform: translateY(-20px) scale(1.1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(1); }
         }
         canvas {
             touch-action: none;
         }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
     </style>
 </head>
-<body class="bg-clinic h-screen w-screen flex flex-col justify-between items-center select-none overflow-hidden">
+<body class="h-screen w-screen flex flex-col justify-between items-center bg-slate-950 text-slate-100 select-none overflow-hidden">
 
-    <!-- TOP BAR: Stats & Patient Mood -->
-    <header class="w-full max-w-md px-4 pt-3 pb-2 flex justify-between items-center z-10 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50">
+    <!-- HEADER / HUD -->
+    <header class="w-full max-w-md px-3 pt-2 pb-1.5 flex justify-between items-center z-10 bg-slate-900/90 border-b border-slate-800 backdrop-blur-md">
         <div class="flex items-center space-x-2">
-            <div class="bg-amber-500/20 text-amber-400 p-2 rounded-xl border border-amber-500/30 flex items-center gap-1.5 font-bold text-sm">
-                <i class="fa-solid me-1 fa-coins text-amber-400 text-lg"></i>
-                <span id="cash-display">$0</span>
+            <!-- Cash -->
+            <div class="bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-xl border border-amber-500/30 flex items-center gap-1.5 font-bold text-xs">
+                <i class="fa-solid fa-coins text-amber-400"></i>
+                <span id="cash-display">$500</span>
             </div>
-            <div class="bg-purple-500/20 text-purple-300 p-2 rounded-xl border border-purple-500/30 flex items-center gap-1.5 font-bold text-sm">
-                <i class="fa-solid fa-cut text-purple-400"></i>
-                <span id="grafts-inventory">0</span> Grafts
+            <!-- Inventory Breakdown -->
+            <div class="bg-teal-500/20 text-teal-300 px-2.5 py-1 rounded-xl border border-teal-500/30 flex items-center gap-1.5 font-bold text-xs">
+                <i class="fa-solid fa-box-archive text-teal-400"></i>
+                <span id="graft-summary-display">0 Grafts</span>
             </div>
         </div>
 
-        <button id="shop-btn" class="bg-teal-500 hover:bg-teal-400 text-slate-950 font-black px-3 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 btn-arcade">
-            <i class="fa-solid fa-store text-sm"></i>
-            Shop
+        <button id="shop-btn" class="bg-gradient-to-r from-teal-500 to-emerald-400 hover:from-teal-400 hover:to-emerald-300 text-slate-950 font-black px-3 py-1.5 rounded-xl text-xs uppercase tracking-wide btn-arcade flex items-center gap-1">
+            <i class="fa-solid fa-store"></i> Shop
         </button>
     </header>
 
-    <!-- PATIENT DIALOGUE & STATUS OVERLAY -->
-    <div id="patient-banner" class="w-full max-w-md px-4 mt-2 z-10">
-        <div class="bg-slate-800/90 rounded-2xl p-3 border border-slate-700/80 shadow-lg flex items-center gap-3 relative overflow-hidden">
-            <div class="w-12 h-12 rounded-full bg-slate-700 flex-shrink-0 flex items-center justify-center text-2xl border-2 border-teal-400/50 shadow-inner" id="patient-avatar">
-                👨‍💼
+    <!-- PATIENT STATUS CARD -->
+    <div class="w-full max-w-md px-3 mt-1 z-10">
+        <div class="bg-slate-900/90 rounded-2xl p-2.5 border border-slate-800 shadow-xl flex items-center gap-2.5 relative">
+            <!-- Patient Face Expressive Avatar -->
+            <div class="relative w-12 h-12 rounded-full bg-slate-800 flex-shrink-0 flex items-center justify-center text-3xl border-2 border-slate-700 shadow-inner" id="avatar-box">
+                <span id="patient-emoji">👨‍💼</span>
+                <!-- Sweat Drop Alert -->
+                <span id="sweat-icon" class="hidden absolute -top-1 -right-1 text-xs animate-bounce">💦</span>
             </div>
+
             <div class="flex-grow min-w-0">
-                <div class="flex justify-between items-baseline">
-                    <h3 id="patient-name" class="font-bold text-sm text-teal-300 truncate">Sir Balding</h3>
-                    <span id="patient-pattern" class="text-[10px] font-semibold bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">Norwood III</span>
+                <div class="flex justify-between items-center">
+                    <h3 id="patient-name" class="font-black text-xs text-teal-300 truncate">Elon Bald</h3>
+                    <span id="patient-role" class="text-[9px] font-extrabold bg-slate-800 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20">Nervous Billionaire</span>
                 </div>
-                <p id="patient-quote" class="text-xs text-slate-300 italic truncate mt-0.5">"Save my hairline before my wedding next week!"</p>
-                
-                <!-- Satisfaction & Pain Bars -->
-                <div class="grid grid-cols-2 gap-2 mt-1.5">
+                <p id="patient-quote" class="text-[10px] text-slate-400 italic truncate mt-0.5">"Fix my hairline so I can launch rocket ships with confidence!"</p>
+
+                <!-- Vitals & Pain Gauge -->
+                <div class="grid grid-cols-2 gap-2 mt-1">
                     <div>
-                        <div class="flex justify-between text-[10px] font-bold mb-0.5">
-                            <span class="text-emerald-400"><i class="fa-solid fa-face-smile mr-0.5"></i> Satisfaction</span>
-                            <span id="satisfaction-val" class="text-slate-300">100%</span>
+                        <div class="flex justify-between text-[9px] font-bold mb-0.5">
+                            <span class="text-emerald-400"><i class="fa-solid fa-smile mr-0.5"></i> Satisfaction</span>
+                            <span id="satis-val" class="text-slate-300">100%</span>
                         </div>
-                        <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
-                            <div id="satisfaction-bar" class="bg-emerald-400 h-full w-full transition-all duration-300"></div>
+                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                            <div id="satis-bar" class="bg-emerald-400 h-full w-full transition-all duration-300"></div>
                         </div>
                     </div>
                     <div>
-                        <div class="flex justify-between text-[10px] font-bold mb-0.5">
-                            <span class="text-rose-400"><i class="fa-solid fa-heart-pulse mr-0.5"></i> Pain / Bleed</span>
+                        <div class="flex justify-between text-[9px] font-bold mb-0.5">
+                            <span class="text-rose-400 flex items-center"><i class="fa-solid fa-heart-pulse pulse-heart mr-1 text-rose-500"></i> Pain (<span id="bpm-display">72</span> BPM)</span>
                             <span id="pain-val" class="text-slate-300">0%</span>
                         </div>
-                        <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
                             <div id="pain-bar" class="bg-rose-500 h-full w-0 transition-all duration-300"></div>
                         </div>
                     </div>
@@ -118,125 +126,141 @@
         </div>
     </div>
 
-    <!-- MAIN GAME CANVAS & SURGERY ZONE -->
+    <!-- MAIN CANVASES & SURGERY STAGE -->
     <main class="relative flex-grow w-full max-w-md flex flex-col justify-center items-center px-2 py-1">
-        <!-- Interactive Canvas -->
-        <div class="relative w-full aspect-square max-h-[380px] bg-slate-950 rounded-3xl border-4 border-slate-700/80 shadow-2xl overflow-hidden flex justify-center items-center" id="canvas-container">
+        <!-- Main Surgery Window -->
+        <div class="relative w-full aspect-square max-h-[360px] bg-slate-900 rounded-3xl border-2 border-slate-800 shadow-2xl overflow-hidden flex justify-center items-center" id="canvas-container">
+            <!-- Surgery Canvas -->
             <canvas id="surgery-canvas" class="w-full h-full cursor-crosshair"></canvas>
             
             <!-- Phase Indicator Badge -->
-            <div id="phase-badge" class="absolute top-3 left-3 bg-teal-500/90 text-slate-950 font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-md backdrop-blur-sm flex items-center gap-1.5">
-                <i class="fa-solid fa-magnifying-glass"></i> Phase 1: Graft Harvest
+            <div id="phase-badge" class="absolute top-2.5 left-2.5 bg-sky-500 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md backdrop-blur-sm flex items-center gap-1">
+                <i class="fa-solid fa-syringe"></i> Phase 1: Local Anesthesia
             </div>
 
-            <!-- Precision Timing Tension Meter Overlay (Extraction) -->
-            <div id="tension-container" class="absolute right-3 top-12 bottom-12 w-6 bg-slate-900/80 rounded-full border border-slate-700 hidden flex-col justify-end p-1 overflow-hidden backdrop-blur-sm">
-                <div id="tension-ideal-zone" class="absolute left-1 right-1 bg-emerald-500/40 border-y-2 border-emerald-400 rounded-sm" style="bottom: 40%; height: 25%;"></div>
-                <div id="tension-bar" class="w-full bg-gradient-to-t from-teal-400 via-amber-400 to-rose-500 rounded-full transition-all duration-75" style="height: 0%;"></div>
-            </div>
+            <!-- Zoom Toggle Button -->
+            <button id="zoom-btn" class="absolute top-2.5 right-2.5 bg-slate-800/90 text-teal-300 hover:text-white p-2 rounded-xl text-xs border border-slate-700 shadow-md">
+                <i class="fa-solid fa-magnifying-glass-plus"></i> <span id="zoom-text">1.0x</span>
+            </button>
 
-            <!-- Quick Action Floating Button (e.g. Apply Ice/Spray) -->
-            <button id="soothe-btn" class="absolute bottom-3 right-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 p-3 rounded-2xl shadow-lg btn-arcade hidden flex items-center justify-center">
-                <i class="fa-solid fa-spray-can-sparkles text-xl"></i>
+            <!-- Floating Feedback Overlay Container -->
+            <div id="floating-overlay" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+
+            <!-- Drag Angle Helper Overlay for Extraction -->
+            <div id="pull-guide" class="hidden absolute pointer-events-none w-20 h-20 rounded-full border-2 border-dashed border-teal-400/70 flex items-center justify-center">
+                <div class="w-2 h-2 rounded-full bg-teal-300 animate-ping"></div>
+            </div>
+        </div>
+
+        <!-- REASSURANCE & CALMING TOOLBAR -->
+        <div class="w-full mt-2 grid grid-cols-3 gap-1.5 px-1">
+            <button id="calm-spray-btn" class="bg-slate-800 hover:bg-slate-700 border border-cyan-500/30 text-cyan-300 py-1.5 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 btn-arcade">
+                <i class="fa-solid fa-spray-can-sparkles"></i> Cool Spray (-15% Pain)
+            </button>
+            <button id="calm-toy-btn" class="bg-slate-800 hover:bg-slate-700 border border-amber-500/30 text-amber-300 py-1.5 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 btn-arcade">
+                <i class="fa-solid fa-baseball"></i> Stress Ball (-10% Pain)
+            </button>
+            <button id="calm-music-btn" class="bg-slate-800 hover:bg-slate-700 border border-purple-500/30 text-purple-300 py-1.5 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 btn-arcade">
+                <i class="fa-solid fa-music"></i> Calming Beats
             </button>
         </div>
 
-        <!-- Tool Selector Bar -->
-        <div class="w-full mt-3 bg-slate-900/90 rounded-2xl p-2 border border-slate-700/80 flex justify-between items-center gap-2">
-            <div class="flex gap-2 flex-grow justify-around" id="tools-bar">
-                <button data-tool="punch" class="tool-btn active bg-teal-500/20 border-2 border-teal-400 text-teal-300 p-2.5 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
-                    <i class="fa-solid fa-microscope text-lg"></i>
-                    <span class="text-[10px] font-bold mt-1 uppercase">Punch</span>
+        <!-- TOOL & PHASE CONTROL SELECTION -->
+        <div class="w-full mt-2 bg-slate-900/90 rounded-2xl p-2 border border-slate-800 flex justify-between items-center gap-2">
+            <div class="flex gap-1.5 flex-grow justify-around" id="tools-bar">
+                <button data-tool="anesthesia" class="tool-btn active bg-sky-500/20 border-2 border-sky-400 text-sky-300 p-2 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
+                    <i class="fa-solid fa-syringe text-base"></i>
+                    <span class="text-[9px] font-bold mt-0.5 uppercase">Numb</span>
                 </button>
-                <button data-tool="implanter" class="tool-btn bg-slate-800 border-2 border-slate-700 text-slate-400 p-2.5 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
-                    <i class="fa-solid fa-syringe text-lg"></i>
-                    <span class="text-[10px] font-bold mt-1 uppercase">Implanter</span>
+                <button data-tool="punch" class="tool-btn bg-slate-800 border-2 border-slate-700 text-slate-400 p-2 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
+                    <i class="fa-solid fa-microscope text-base"></i>
+                    <span class="text-[9px] font-bold mt-0.5 uppercase">Harvest</span>
                 </button>
-                <button data-tool="spray" class="tool-btn bg-slate-800 border-2 border-slate-700 text-slate-400 p-2.5 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
-                    <i class="fa-solid fa-pump-soap text-lg"></i>
-                    <span class="text-[10px] font-bold mt-1 uppercase">Soothing Spray</span>
+                <button data-tool="implanter" class="tool-btn bg-slate-800 border-2 border-slate-700 text-slate-400 p-2 rounded-xl flex-1 flex flex-col items-center justify-center transition-all">
+                    <i class="fa-solid fa-hand-holding-medical text-base"></i>
+                    <span class="text-[9px] font-bold mt-0.5 uppercase">Implant</span>
                 </button>
             </div>
-            <button id="switch-phase-btn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-3 py-2.5 rounded-xl text-xs uppercase tracking-wider btn-arcade flex items-center gap-1.5">
-                <span id="phase-btn-text">Implant Zone</span>
+            
+            <button id="switch-phase-btn" class="bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-black px-3 py-2 rounded-xl text-[11px] uppercase tracking-wider btn-arcade flex items-center gap-1">
+                <span id="phase-btn-text">Harvest Phase</span>
                 <i class="fa-solid fa-arrow-right"></i>
             </button>
         </div>
     </main>
 
-    <!-- FOOTER: Surgery Progress & Complete Button -->
-    <footer class="w-full max-w-md px-4 pb-4 pt-1 z-10 flex flex-col gap-2">
-        <div class="flex justify-between items-center text-xs font-bold text-slate-400 px-1">
-            <span>Coverage Goal:</span>
-            <span id="coverage-percentage" class="text-teal-300 font-extrabold text-sm">0%</span>
+    <!-- FOOTER: Progress & Finish -->
+    <footer class="w-full max-w-md px-3 pb-3 pt-1 z-10 flex flex-col gap-1.5">
+        <div class="flex justify-between items-center text-[11px] font-bold text-slate-400 px-1">
+            <span>Bald Area Coverage Target:</span>
+            <span id="coverage-percentage" class="text-teal-300 font-black text-xs">0%</span>
         </div>
-        <button id="finish-surgery-btn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black py-3 rounded-2xl text-base uppercase tracking-wider shadow-lg btn-arcade pulse-glow flex items-center justify-center gap-2">
-            <i class="fa-solid fa-check-double text-lg"></i>
-            Finish Surgery & Reveal!
+        <button id="finish-surgery-btn" class="w-full bg-gradient-to-r from-emerald-400 via-teal-400 to-sky-400 text-slate-950 font-black py-2.5 rounded-2xl text-sm uppercase tracking-wider shadow-lg btn-arcade flex items-center justify-center gap-2">
+            <i class="fa-solid fa-award text-base"></i> Complete Surgery & Reveal!
         </button>
     </footer>
 
-    <!-- MODAL: SHOP -->
-    <div id="shop-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border-2 border-teal-500/50 rounded-3xl w-full max-w-md p-5 shadow-2xl flex flex-col max-h-[85vh]">
-            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
-                <h2 class="text-xl font-black text-teal-300 flex items-center gap-2">
-                    <i class="fa-solid fa-store"></i> Clinic Tools Shop
+    <!-- MODAL: CLINIC SHOP -->
+    <div id="shop-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border-2 border-teal-500/40 rounded-3xl w-full max-w-md p-4 shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
+                <h2 class="text-lg font-black text-teal-300 flex items-center gap-2">
+                    <i class="fa-solid fa-clinic-medical"></i> Surgical Tool Shop
                 </h2>
                 <button id="close-shop-btn" class="text-slate-400 hover:text-white p-1">
-                    <i class="fa-solid fa-xmark text-xl"></i>
+                    <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
-            <div class="overflow-y-auto space-y-3 pr-1 flex-grow" id="shop-items-container">
-                <!-- Shop items will be generated here -->
+            <div class="overflow-y-auto space-y-2.5 pr-1 flex-grow" id="shop-items-container">
+                <!-- Upgrades list rendered dynamically -->
             </div>
         </div>
     </div>
 
-    <!-- MODAL: SURGERY RESULT & GROWTH TIMELAPSE -->
+    <!-- MODAL: RESULT TIMELAPSE & REVEAL -->
     <div id="result-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border-2 border-amber-400/50 rounded-3xl w-full max-w-md p-5 shadow-2xl flex flex-col items-center text-center">
-            <h2 class="text-2xl font-black text-amber-400 mb-1">SURGERY COMPLETE!</h2>
-            <p class="text-xs text-slate-400 mb-4">6 Months Post-Op Growth Timelapse</p>
+            <h2 class="text-2xl font-black text-amber-400 mb-0.5">SURGERY RESULT</h2>
+            <p class="text-[11px] text-slate-400 mb-3">6 Months Hair Growth Timelapse</p>
 
-            <!-- Before / After Canvas Preview -->
-            <div class="relative w-48 h-48 bg-slate-950 rounded-2xl overflow-hidden border-2 border-teal-400/40 shadow-inner mb-4">
+            <!-- Before/After Canvas -->
+            <div class="relative w-44 h-44 bg-slate-950 rounded-2xl overflow-hidden border-2 border-teal-400/40 shadow-inner mb-3">
                 <canvas id="timelapse-canvas" class="w-full h-full"></canvas>
             </div>
 
             <!-- Star Ratings -->
-            <div class="flex text-amber-400 text-2xl gap-2 mb-3" id="stars-container">
+            <div class="flex text-amber-400 text-2xl gap-2 mb-2" id="stars-container">
                 <i class="fa-solid fa-star"></i>
                 <i class="fa-solid fa-star"></i>
                 <i class="fa-solid fa-star"></i>
             </div>
 
-            <div id="result-feedback" class="bg-slate-800 rounded-xl p-3 text-xs text-slate-300 italic w-full mb-4 border border-slate-700">
-                "Incredible results! I can finally go out without a cap!"
+            <div id="result-feedback" class="bg-slate-800 rounded-xl p-2.5 text-xs text-slate-200 italic w-full mb-3 border border-slate-700">
+                "Simply unbelievable work doc!"
             </div>
 
-            <div class="bg-slate-950 rounded-xl p-3 w-full mb-4 grid grid-cols-2 gap-2 text-xs">
+            <div class="bg-slate-950 rounded-xl p-2.5 w-full mb-3 grid grid-cols-2 gap-2 text-xs">
                 <div>
-                    <span class="text-slate-500 block">Grafts Harvested</span>
-                    <span id="res-harvested" class="font-bold text-teal-300 text-sm">0</span>
+                    <span class="text-slate-500 block text-[10px]">Total Harvested</span>
+                    <span id="res-harvested" class="font-black text-teal-300 text-sm">0 Grafts</span>
                 </div>
                 <div>
-                    <span class="text-slate-500 block">Successful Implants</span>
-                    <span id="res-implants" class="font-bold text-emerald-400 text-sm">0</span>
+                    <span class="text-slate-500 block text-[10px]">Successfully Implanted</span>
+                    <span id="res-implants" class="font-black text-emerald-400 text-sm">0 Grafts</span>
                 </div>
                 <div>
-                    <span class="text-slate-500 block">Client Satisfaction</span>
-                    <span id="res-satisfaction" class="font-bold text-amber-400 text-sm">100%</span>
+                    <span class="text-slate-500 block text-[10px]">Patient Comfort</span>
+                    <span id="res-satisfaction" class="font-black text-amber-400 text-sm">100%</span>
                 </div>
                 <div>
-                    <span class="text-slate-500 block">Earned Cash</span>
-                    <span id="res-cash" class="font-bold text-amber-400 text-sm">$0</span>
+                    <span class="text-slate-500 block text-[10px]">Earned Pay & Tip</span>
+                    <span id="res-cash" class="font-black text-amber-400 text-sm">$0</span>
                 </div>
             </div>
 
             <button id="next-patient-btn" class="w-full bg-gradient-to-r from-amber-500 to-teal-400 text-slate-950 font-black py-3 rounded-xl uppercase tracking-wider btn-arcade">
-                Next Patient <i class="fa-solid fa-user-plus ml-1"></i>
+                Next Patient <i class="fa-solid fa-arrow-right ml-1"></i>
             </button>
         </div>
     </div>
@@ -253,61 +277,61 @@
                     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 }
             }
-            playPop() {
+            playInject() {
                 if (!this.ctx) return;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.08);
-                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            }
+            playPop(isPerfect = false) {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = isPerfect ? 'sine' : 'triangle';
+                const startFreq = isPerfect ? 400 : 250;
+                const endFreq = isPerfect ? 1000 : 600;
+                osc.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(endFreq, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
                 osc.start();
                 osc.stop(this.ctx.currentTime + 0.08);
             }
-            playPluck() {
-                if (!this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(450, this.ctx.currentTime + 0.12);
-                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.12);
-            }
-            playHurt() {
+            playDamage() {
                 if (!this.ctx) return;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(220, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.25);
                 gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
                 osc.start();
-                osc.stop(this.ctx.currentTime + 0.2);
+                osc.stop(this.ctx.currentTime + 0.25);
             }
             playSpray() {
                 if (!this.ctx) return;
                 const bufferSize = this.ctx.sampleRate * 0.15;
                 const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1;
-                }
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
                 const noise = this.ctx.createBufferSource();
                 noise.buffer = buffer;
                 const filter = this.ctx.createBiquadFilter();
                 filter.type = 'bandpass';
-                filter.frequency.value = 1200;
+                filter.frequency.value = 1400;
                 const gain = this.ctx.createGain();
                 gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
@@ -316,102 +340,95 @@
                 gain.connect(this.ctx.destination);
                 noise.start();
             }
-            playSuccess() {
+            playFanfare() {
                 if (!this.ctx) return;
-                const now = this.ctx.currentTime;
                 const notes = [523.25, 659.25, 783.99, 1046.50];
                 notes.forEach((freq, idx) => {
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
-                    osc.type = 'sine';
+                    osc.type = 'triangle';
                     osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.15, now + idx * 0.08);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.2);
+                    gain.gain.setValueAtTime(0.2, this.ctx.currentTime + idx * 0.09);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.09 + 0.25);
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
-                    osc.start(now + idx * 0.08);
-                    osc.stop(now + idx * 0.08 + 0.2);
+                    osc.start(this.ctx.currentTime + idx * 0.09);
+                    osc.stop(this.ctx.currentTime + idx * 0.09 + 0.25);
                 });
             }
         }
 
         const audio = new AudioFX();
 
-        // --- PATIENTS DEFINITION ---
-        const PATIENT_PROFILES = [
+        // --- CLIENT PROFILES ---
+        const CLIENT_PROFILES = [
             {
-                name: "Barry 'Comb' Miller",
-                avatar: "👨‍💼",
-                pattern: "Norwood III - M-Shape",
-                quote: "My combover can no longer hide the truth!",
+                name: "Elon Bald",
+                role: "Nervous Billionaire",
+                emoji: "👨‍💼",
+                quote: "Fix my hairline so I can launch rocket ships with confidence!",
                 skinTone: "#f5d0a9",
-                hairColor: "#2c1d11",
-                baldingType: "m_shape"
+                skinShadow: "#d8a878",
+                hairColor: "#2b1e16",
+                baldingPattern: "m_shape"
             },
             {
-                name: "Hipster Chad",
-                avatar: "🧔",
-                pattern: "Crown & Temples",
-                quote: "Can we transfer hair from my beard to my scalp?",
+                name: "Influencer Jax",
+                role: "Selfie Enthusiast",
+                emoji: "🧔",
+                quote: "My 4K camera angles are exposing my thinning crown!",
                 skinTone: "#e0ac69",
-                hairColor: "#8d5b4c",
-                baldingType: "crown"
+                skinShadow: "#b88244",
+                hairColor: "#5c3a21",
+                baldingPattern: "crown"
             },
             {
-                name: "Baron Von Bald",
-                avatar: "👨‍💻",
-                pattern: "Norwood V - Horseshoe",
-                quote: "Executive stress stole my entire top peak!",
-                skinTone: "#f8d5c2",
-                hairColor: "#1a1a1a",
-                baldingType: "horseshoe"
-            },
-            {
-                name: "Slick Rick",
-                avatar: "👨‍🎤",
-                pattern: "Diffuse Thinning",
-                quote: "Make it extra thick! I'm going on tour soon!",
+                name: "Captain Rock",
+                role: "Aging Musician",
+                emoji: "👨‍🎤",
+                quote: "I need stadium-worthy locks before our world tour!",
                 skinTone: "#c68642",
-                hairColor: "#e6be8a",
-                baldingType: "diffuse"
+                skinShadow: "#965b20",
+                hairColor: "#111111",
+                baldingPattern: "horseshoe"
             }
         ];
 
-        // --- SHOP UPGRADES ---
-        const SHOP_ITEMS = [
+        // --- UPGRADES CONFIG ---
+        const SHOP_UPGRADES = [
             {
-                id: "punch_speed",
-                name: "Motorized FUE Punch",
-                icon: "fa-bolt",
-                desc: "Harvest grafts 50% faster with less tension.",
+                id: "punch_size",
+                name: "Precision Micro-Punch (0.8mm)",
+                icon: "fa-microscope",
+                desc: "Prevents root damage & increases harvest speed.",
                 cost: 250,
                 level: 0,
                 maxLevel: 3
             },
             {
-                id: "implanter_multi",
-                name: "Choi Multi-Implanter Pen",
-                icon: "fa-cubes",
-                desc: "Places double grafts automatically in target areas.",
-                cost: 400,
-                level: 0,
-                maxLevel: 2
-            },
-            {
-                id: "anesthesia",
-                name: "Cooling Numbing Spray",
-                icon: "fa-snowflake",
-                desc: "Reduces patient pain build-up by 40%.",
-                cost: 200,
+                id: "anesthesia_tech",
+                name: "Nerve Block Auto-Injector",
+                icon: "fa-syringe",
+                desc: "Extends anesthesia duration & reduces pain buildup.",
+                cost: 300,
                 level: 0,
                 maxLevel: 3
             },
             {
-                id: "growth_serum",
-                name: "Super Follicle Serum",
+                id: "implanter_pen",
+                name: "Choi Dual Implanter Pen",
+                icon: "fa-cubes",
+                desc: "Plants 2 grafts at once into recipient slots.",
+                cost: 450,
+                level: 0,
+                maxLevel: 2
+            },
+            {
+                id: "biotin_serum",
+                name: "Follicle Booster Serum",
                 icon: "fa-vial",
-                desc: "Increases successful graft growth density by 25%.",
-                cost: 500,
+                desc: "Earn 30% extra bonus payout per graft.",
+                cost: 350,
                 level: 0,
                 maxLevel: 2
             }
@@ -419,32 +436,36 @@
 
         // --- GAME STATE ---
         let state = {
-            cash: 300,
-            inventoryGrafts: 0,
-            harvestedGraftsCount: 0,
-            implantedGraftsCount: 0,
+            cash: 500,
+            inventory: { single: 0, double: 0, triple: 0 },
+            harvestedTotal: 0,
+            implantsTotal: 0,
             patientSatisfaction: 100,
             patientPain: 0,
-            currentPhase: 1, // 1: Harvest, 2: Implant
-            currentTool: "punch", // punch, implanter, spray
-            currentPatientIndex: 0,
+            patientBPM: 72,
+            currentPhase: 1, // 1: Anesthesia, 2: Harvest, 3: Implant
+            currentTool: 'anesthesia',
+            currentClientIndex: 0,
+            zoomScale: 1.0,
             upgrades: {
-                punch_speed: 0,
-                implanter_multi: 0,
-                anesthesia: 0,
-                growth_serum: 0
+                punch_size: 0,
+                anesthesia_tech: 0,
+                implanter_pen: 0,
+                biotin_serum: 0
             },
-            // Scalp grid representation
+            // Scalp arrays
+            anesthesiaZones: [],
             donorFollicles: [],
             recipientSites: [],
-            activeExtractingFollicle: null,
-            extractionTension: 0
+            // Drag Extraction Mini-Game State
+            dragStartPos: null,
+            activeFollicle: null
         };
 
-        // --- CANVAS & GRAPHICS ---
+        // --- CANVAS SETUP ---
         const canvas = document.getElementById('surgery-canvas');
         const ctx = canvas.getContext('2d');
-        let canvasSize = 350;
+        let canvasSize = 360;
 
         function resizeCanvas() {
             const container = document.getElementById('canvas-container');
@@ -459,92 +480,111 @@
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
             setupControls();
-            loadPatient(0);
+            loadClient(0);
             updateUI();
             requestAnimationFrame(gameLoop);
         });
 
-        // --- PATIENT GENERATION ---
-        function loadPatient(index) {
-            state.currentPatientIndex = index % PATIENT_PROFILES.length;
-            const patient = PATIENT_PROFILES[state.currentPatientIndex];
+        // --- LOAD CLIENT & SCALP SETUP ---
+        function loadClient(index) {
+            state.currentClientIndex = index % CLIENT_PROFILES.length;
+            const client = CLIENT_PROFILES[state.currentClientIndex];
 
-            // Reset state
-            state.inventoryGrafts = 0;
-            state.harvestedGraftsCount = 0;
-            state.implantedGraftsCount = 0;
+            state.inventory = { single: 0, double: 0, triple: 0 };
+            state.harvestedTotal = 0;
+            state.implantsTotal = 0;
             state.patientSatisfaction = 100;
             state.patientPain = 0;
+            state.patientBPM = 72;
             state.currentPhase = 1;
-            state.currentTool = "punch";
+            state.currentTool = 'anesthesia';
+            state.zoomScale = 1.0;
 
-            // UI updating
-            document.getElementById('patient-avatar').innerText = patient.avatar;
-            document.getElementById('patient-name').innerText = patient.name;
-            document.getElementById('patient-pattern').innerText = patient.pattern;
-            document.getElementById('patient-quote').innerText = `"${patient.quote}"`;
+            document.getElementById('patient-emoji').innerText = client.emoji;
+            document.getElementById('patient-name').innerText = client.name;
+            document.getElementById('patient-role').innerText = client.role;
+            document.getElementById('patient-quote').innerText = `"${client.quote}"`;
 
-            // Generate Scalp Spots
-            generateDonorArea();
-            generateRecipientArea(patient.baldingType);
+            generateAnesthesiaZones();
+            generateDonorFollicles();
+            generateRecipientSites(client.baldingPattern);
+
+            selectTool('anesthesia');
             updatePhaseUI();
         }
 
-        // Generate donor hair follicles at back/sides
-        function generateDonorArea() {
+        // Generate Numbing Zones
+        function generateAnesthesiaZones() {
+            state.anesthesiaZones = [];
+            const centerX = canvasSize / 2;
+            const centerY = canvasSize / 2;
+            const radii = [canvasSize * 0.35, canvasSize * 0.22];
+
+            radii.forEach(r => {
+                for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+                    state.anesthesiaZones.push({
+                        x: centerX + Math.cos(a) * r,
+                        y: centerY + Math.sin(a) * r,
+                        radius: 24,
+                        numbness: 0 // 0 to 100%
+                    });
+                }
+            });
+        }
+
+        // Generate Hair Donor Zones (Back & Sides of Head)
+        function generateDonorFollicles() {
             state.donorFollicles = [];
             const centerX = canvasSize / 2;
             const centerY = canvasSize / 2;
-            const radius = canvasSize * 0.38;
+            const baseRadius = canvasSize * 0.36;
 
-            for (let i = 0; i < 65; i++) {
-                const angle = Math.PI * 0.15 + Math.random() * Math.PI * 0.7; // Back/sides semi-circle
-                const dist = radius * (0.65 + Math.random() * 0.3);
+            for (let i = 0; i < 75; i++) {
+                const angle = Math.PI * 0.2 + Math.random() * Math.PI * 0.6; // Horseshoe back angle
+                const dist = baseRadius * (0.65 + Math.random() * 0.3);
                 const x = centerX + Math.cos(angle) * dist;
                 const y = centerY + Math.sin(angle) * dist;
 
-                // 1, 2 or 3 hairs per graft
-                const hairCount = Math.random() < 0.3 ? 1 : (Math.random() < 0.7 ? 2 : 3);
+                // Graft types: 1-hair, 2-hair, or 3-hair
+                const r = Math.random();
+                const graftType = r < 0.4 ? 1 : (r < 0.8 ? 2 : 3);
 
                 state.donorFollicles.push({
                     x, y,
-                    radius: 7 + hairCount * 2,
-                    hairCount,
+                    radius: 7 + graftType * 1.5,
+                    graftType,
                     extracted: false,
-                    extractionProgress: 0,
-                    angle: angle + (Math.random() - 0.5) * 0.3
+                    angle: angle + (Math.random() - 0.5) * 0.5, // Natural growth direction angle
+                    pullProgress: 0
                 });
             }
         }
 
-        // Generate recipient empty holes on target bald zones
-        function generateRecipientArea(type) {
+        // Generate Bald Recipient Sites
+        function generateRecipientSites(pattern) {
             state.recipientSites = [];
             const centerX = canvasSize / 2;
             const centerY = canvasSize / 2;
 
-            for (let i = 0; i < 50; i++) {
-                let x, y;
-                let valid = false;
+            for (let i = 0; i < 55; i++) {
+                let x, y, valid = false;
 
-                if (type === 'm_shape') {
-                    // Temples
+                if (pattern === 'm_shape') {
                     const side = Math.random() > 0.5 ? 1 : -1;
-                    x = centerX + side * (canvasSize * 0.15 + Math.random() * canvasSize * 0.15);
-                    y = centerY - (canvasSize * 0.15 + Math.random() * canvasSize * 0.15);
+                    x = centerX + side * (canvasSize * 0.12 + Math.random() * canvasSize * 0.16);
+                    y = centerY - (canvasSize * 0.1 + Math.random() * canvasSize * 0.18);
                     valid = true;
-                } else if (type === 'crown') {
-                    // Center top
+                } else if (pattern === 'crown') {
                     const r = Math.random() * canvasSize * 0.18;
                     const a = Math.random() * Math.PI * 2;
                     x = centerX + Math.cos(a) * r;
-                    y = centerY - canvasSize * 0.05 + Math.sin(a) * r;
+                    y = centerY - canvasSize * 0.04 + Math.sin(a) * r;
                     valid = true;
-                } else { // Horseshoe / Diffuse
-                    const r = Math.random() * canvasSize * 0.28;
+                } else { // Horseshoe
+                    const r = Math.random() * canvasSize * 0.26;
                     const a = Math.random() * Math.PI * 2;
                     x = centerX + Math.cos(a) * r;
-                    y = centerY - canvasSize * 0.1 + Math.sin(a) * r;
+                    y = centerY - canvasSize * 0.08 + Math.sin(a) * r;
                     valid = true;
                 }
 
@@ -553,49 +593,49 @@
                         x, y,
                         radius: 8,
                         implanted: false,
-                        hairCount: 0,
-                        bleeding: false,
-                        bleedTime: 0
+                        graftType: 0
                     });
                 }
             }
         }
 
-        // --- INTERACTION CONTROLS ---
-        let isTouching = false;
-        let touchStartPos = { x: 0, y: 0 };
-
+        // --- CONTROL EVENT LISTENERS ---
         function setupControls() {
             const getCanvasCoords = (e) => {
                 const rect = canvas.getBoundingClientRect();
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                return {
-                    x: (clientX - rect.left) * (canvas.width / rect.width),
-                    y: (clientY - rect.top) * (canvas.height / rect.height)
-                };
+                let x = (clientX - rect.left) * (canvas.width / rect.width);
+                let y = (clientY - rect.top) * (canvas.height / rect.height);
+
+                if (state.zoomScale > 1.0) {
+                    const cx = canvasSize / 2;
+                    const cy = canvasSize / 2;
+                    x = cx + (x - cx) / state.zoomScale;
+                    y = cy + (y - cy) / state.zoomScale;
+                }
+                return { x, y };
             };
 
             const handleStart = (e) => {
                 audio.init();
-                isTouching = true;
                 const pos = getCanvasCoords(e);
-                touchStartPos = pos;
-                handleCanvasInteraction(pos, 'start');
+                state.dragStartPos = pos;
+                onActionStart(pos);
             };
 
             const handleMove = (e) => {
-                if (!isTouching) return;
+                if (!state.dragStartPos) return;
                 const pos = getCanvasCoords(e);
-                handleCanvasInteraction(pos, 'move');
+                onActionMove(pos);
             };
 
             const handleEnd = () => {
-                if (!isTouching) return;
-                isTouching = false;
-                if (state.activeExtractingFollicle) {
-                    finishExtraction(false);
+                if (state.activeFollicle) {
+                    onFolliclePullRelease();
                 }
+                state.dragStartPos = null;
+                document.getElementById('pull-guide').classList.add('hidden');
             };
 
             canvas.addEventListener('mousedown', handleStart);
@@ -606,36 +646,34 @@
             canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, { passive: false });
             window.addEventListener('touchend', handleEnd);
 
-            // UI Tool Switches
+            // Tools Switching
             document.querySelectorAll('.tool-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const tool = btn.dataset.tool;
-                    selectTool(tool);
-                });
+                btn.addEventListener('click', () => selectTool(btn.dataset.tool));
             });
 
-            // Phase Switch Button
-            document.getElementById('switch-phase-btn').addEventListener('click', () => {
-                state.currentPhase = state.currentPhase === 1 ? 2 : 1;
-                // Default tool matching phase
-                selectTool(state.currentPhase === 1 ? "punch" : "implanter");
-                updatePhaseUI();
+            // Phase Switching
+            document.getElementById('switch-phase-btn').addEventListener('click', toggleNextPhase);
+
+            // Zoom Button
+            document.getElementById('zoom-btn').addEventListener('click', () => {
+                state.zoomScale = state.zoomScale === 1.0 ? 1.6 : 1.0;
+                document.getElementById('zoom-text').innerText = `${state.zoomScale.toFixed(1)}x`;
             });
 
-            // Quick Soothe Spray Button
-            document.getElementById('soothe-btn').addEventListener('click', applySoothingSpray);
+            // Calming Buttons
+            document.getElementById('calm-spray-btn').addEventListener('click', () => applyCalm('spray'));
+            document.getElementById('calm-toy-btn').addEventListener('click', () => applyCalm('toy'));
+            document.getElementById('calm-music-btn').addEventListener('click', () => applyCalm('music'));
 
-            // Finish Surgery Button
-            document.getElementById('finish-surgery-btn').addEventListener('click', finishSurgery);
-
-            // Shop UI Modal
+            // Shop Modal
             document.getElementById('shop-btn').addEventListener('click', openShop);
-            document.getElementById('close-shop-btn').addEventListener('click', closeShop);
+            document.getElementById('close-shop-btn').addEventListener('click', () => document.getElementById('shop-modal').classList.add('hidden'));
 
-            // Next Patient
+            // Finish & Next Client
+            document.getElementById('finish-surgery-btn').addEventListener('click', finishSurgery);
             document.getElementById('next-patient-btn').addEventListener('click', () => {
                 document.getElementById('result-modal').classList.add('hidden');
-                loadPatient(state.currentPatientIndex + 1);
+                loadClient(state.currentClientIndex + 1);
             });
         }
 
@@ -652,257 +690,397 @@
             });
         }
 
+        function toggleNextPhase() {
+            if (state.currentPhase === 1) {
+                state.currentPhase = 2;
+                selectTool('punch');
+            } else if (state.currentPhase === 2) {
+                state.currentPhase = 3;
+                selectTool('implanter');
+            } else {
+                state.currentPhase = 1;
+                selectTool('anesthesia');
+            }
+            updatePhaseUI();
+        }
+
         function updatePhaseUI() {
             const badge = document.getElementById('phase-badge');
             const phaseBtnText = document.getElementById('phase-btn-text');
-            const tensionUI = document.getElementById('tension-container');
 
             if (state.currentPhase === 1) {
-                badge.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> Phase 1: Graft Harvest`;
-                badge.className = "absolute top-3 left-3 bg-teal-500/90 text-slate-950 font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-md backdrop-blur-sm flex items-center gap-1.5";
-                phaseBtnText.innerText = "Implant Zone";
-                tensionUI.classList.remove('hidden');
+                badge.innerHTML = `<i class="fa-solid fa-syringe"></i> Phase 1: Local Anesthesia`;
+                badge.className = "absolute top-2.5 left-2.5 bg-sky-500 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md backdrop-blur-sm flex items-center gap-1";
+                phaseBtnText.innerText = "Harvest Phase";
+            } else if (state.currentPhase === 2) {
+                badge.innerHTML = `<i class="fa-solid fa-microscope"></i> Phase 2: Graft Harvesting`;
+                badge.className = "absolute top-2.5 left-2.5 bg-amber-500 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md backdrop-blur-sm flex items-center gap-1";
+                phaseBtnText.innerText = "Implant Phase";
             } else {
-                badge.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Phase 2: Hair Implant`;
-                badge.className = "absolute top-3 left-3 bg-purple-500/90 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-md backdrop-blur-sm flex items-center gap-1.5";
-                phaseBtnText.innerText = "Harvest Zone";
-                tensionUI.classList.add('hidden');
+                badge.innerHTML = `<i class="fa-solid fa-hand-holding-medical"></i> Phase 3: Micro Grafting`;
+                badge.className = "absolute top-2.5 left-2.5 bg-emerald-400 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md backdrop-blur-sm flex items-center gap-1";
+                phaseBtnText.innerText = "Numb Phase";
             }
         }
 
-        // --- CORE GAME LOGIC & ACTIONS ---
-        function handleCanvasInteraction(pos, stage) {
-            if (state.currentTool === "spray") {
-                if (stage === 'start' || stage === 'move') {
-                    applySoothingSpray();
+        // --- INTERACTION ACTIONS (ANESTHESIA, HARVEST DRAG & IMPLANT) ---
+        function onActionStart(pos) {
+            if (state.currentTool === 'anesthesia') {
+                // Target Anesthesia Numbing Zone
+                const zone = state.anesthesiaZones.find(z => Math.hypot(z.x - pos.x, z.y - pos.y) < z.radius * 1.5);
+                if (zone) {
+                    zone.numbness = Math.min(100, zone.numbness + 40 + state.upgrades.anesthesia_tech * 15);
+                    audio.playInject();
+                    spawnFloatingText(pos.x, pos.y, "NUMBED! 💉", "#38bdf8");
+                    updateUI();
                 }
-                return;
-            }
-
-            if (state.currentPhase === 1) { // HARVEST PHASE
-                if (state.currentTool !== 'punch') return;
-
-                if (stage === 'start') {
-                    // Check if clicked an unextracted donor follicle
-                    const target = state.donorFollicles.find(f => !f.extracted && Math.hypot(f.x - pos.x, f.y - pos.y) < f.radius * 1.5);
-                    if (target) {
-                        state.activeExtractingFollicle = target;
-                        state.extractionTension = 10;
-                    }
+            } else if (state.currentTool === 'punch') {
+                // Target Harvest Follicle
+                const follicle = state.donorFollicles.find(f => !f.extracted && Math.hypot(f.x - pos.x, f.y - pos.y) < f.radius * 1.8);
+                if (follicle) {
+                    state.activeFollicle = follicle;
+                    const guide = document.getElementById('pull-guide');
+                    guide.classList.remove('hidden');
+                    guide.style.left = `${pos.x - 40}px`;
+                    guide.style.top = `${pos.y - 40}px`;
                 }
-            } else if (state.currentPhase === 2) { // IMPLANT PHASE
-                if (state.currentTool !== 'implanter') return;
+            } else if (state.currentTool === 'implanter') {
+                // Target Recipient Site
+                const totalGrafts = state.inventory.single + state.inventory.double + state.inventory.triple;
+                if (totalGrafts <= 0) {
+                    audio.playDamage();
+                    spawnFloatingText(pos.x, pos.y, "NO GRAFTS!", "#f43f5e");
+                    return;
+                }
 
-                if (stage === 'start') {
-                    if (state.inventoryGrafts <= 0) {
-                        // Pain notification or feedback
-                        audio.playHurt();
-                        return;
+                const site = state.recipientSites.find(s => !s.implanted && Math.hypot(s.x - pos.x, s.y - pos.y) < s.radius * 2);
+                if (site) {
+                    // Check local numbness level
+                    const isNumb = checkZoneNumbness(site.x, site.y);
+                    
+                    // Pick best graft available (Triples > Doubles > Singles)
+                    let usedGraftType = 1;
+                    if (state.inventory.triple > 0) { usedGraftType = 3; state.inventory.triple--; }
+                    else if (state.inventory.double > 0) { usedGraftType = 2; state.inventory.double--; }
+                    else if (state.inventory.single > 0) { usedGraftType = 1; state.inventory.single--; }
+
+                    site.implanted = true;
+                    site.graftType = usedGraftType;
+                    state.implantsTotal++;
+
+                    const baseBonus = usedGraftType * 20;
+                    const bonusMult = 1 + (state.upgrades.biotin_serum * 0.3);
+                    const cashGained = Math.round(baseBonus * bonusMult);
+                    state.cash += cashGained;
+
+                    audio.playPop(true);
+                    spawnFloatingText(pos.x, pos.y, `+${usedGraftType} Hair Graft! (+$${cashGained})`, "#34d399");
+
+                    if (!isNumb) {
+                        increasePain(12);
                     }
-
-                    // Check if clicked an empty recipient site
-                    const target = state.recipientSites.find(s => !s.implanted && Math.hypot(s.x - pos.x, s.y - pos.y) < s.radius * 1.8);
-                    if (target) {
-                        // Multi-implanter upgrade check
-                        const extraGraft = state.upgrades.implanter_multi > 0 && Math.random() < 0.4 ? 1 : 0;
-                        const hairCountToPlant = 2 + extraGraft;
-
-                        target.implanted = true;
-                        target.hairCount = hairCountToPlant;
-                        state.inventoryGrafts = Math.max(0, state.inventoryGrafts - 1);
-                        state.implantedGraftsCount++;
-                        state.cash += 25;
-
-                        audio.playPluck();
-                        updateUI();
-                    }
+                    updateUI();
                 }
             }
         }
 
-        function applySoothingSpray() {
-            if (state.patientPain > 0) {
-                state.patientPain = Math.max(0, state.patientPain - 25);
-                state.patientSatisfaction = Math.min(100, state.patientSatisfaction + 5);
-                audio.playSpray();
-                
-                // Clear active bleeding
-                state.recipientSites.forEach(s => s.bleeding = false);
-                updateUI();
+        function onActionMove(pos) {
+            if (state.activeFollicle && state.dragStartPos) {
+                // Mini-game Angle & Distance Drag check
+                const dx = pos.x - state.dragStartPos.x;
+                const dy = pos.y - state.dragStartPos.y;
+                const dist = Math.hypot(dx, dy);
+                const dragAngle = Math.atan2(dy, dx);
+
+                // Compare drag angle to follicle natural growth angle
+                let angleDiff = Math.abs(dragAngle - state.activeFollicle.angle);
+                if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
+
+                state.activeFollicle.pullProgress = dist;
+
+                // Threshold trigger for clean release
+                if (dist > 35) {
+                    onFolliclePullRelease(angleDiff);
+                }
             }
         }
 
-        function finishExtraction(success) {
-            if (!state.activeExtractingFollicle) return;
+        function onFolliclePullRelease(angleDiff = 0) {
+            if (!state.activeFollicle) return;
 
-            if (success) {
-                state.activeExtractingFollicle.extracted = true;
-                const gainedGrafts = state.activeExtractingFollicle.hairCount;
-                state.inventoryGrafts += gainedGrafts;
-                state.harvestedGraftsCount += gainedGrafts;
-                state.cash += 15 * gainedGrafts;
-                audio.playPop();
+            const f = state.activeFollicle;
+            const isNumb = checkZoneNumbness(f.x, f.y);
+
+            // Angle alignment tolerance based on upgrade punch size
+            const maxAllowedDiff = 0.65 + (state.upgrades.punch_size * 0.2);
+
+            if (angleDiff <= maxAllowedDiff) {
+                // CLEAN EXTRACTION
+                f.extracted = true;
+                if (f.graftType === 1) state.inventory.single++;
+                else if (f.graftType === 2) state.inventory.double++;
+                else if (f.graftType === 3) state.inventory.triple++;
+
+                state.harvestedTotal++;
+                const earned = f.graftType * 15;
+                state.cash += earned;
+
+                audio.playPop(true);
+                spawnFloatingText(f.x, f.y, `PERFECT ROOT! (+$${earned})`, "#2dd4bf");
+
+                if (!isNumb) increasePain(8);
             } else {
-                // Failed extraction / Damaged follicle
-                state.patientPain = Math.min(100, state.patientPain + 15);
-                state.patientSatisfaction = Math.max(0, state.patientSatisfaction - 10);
-                audio.playHurt();
+                // ROOT DAMAGED / SNAPPED
+                f.extracted = true;
+                audio.playDamage();
+                spawnFloatingText(f.x, f.y, `ROOT DAMAGED! ⚠️`, "#f43f5e");
+                increasePain(18);
             }
 
-            state.activeExtractingFollicle = null;
-            state.extractionTension = 0;
+            state.activeFollicle = null;
+            document.getElementById('pull-guide').classList.add('hidden');
             updateUI();
         }
 
-        // --- MAIN GAME LOOP (ANIMATION & PHYSICS) ---
+        // Check local scalp numbing status
+        function checkZoneNumbness(x, y) {
+            const nearest = state.anesthesiaZones.find(z => Math.hypot(z.x - x, z.y - y) < z.radius * 2);
+            return nearest && nearest.numbness > 30;
+        }
+
+        function increasePain(amount) {
+            const painReduction = state.upgrades.anesthesia_tech * 0.2;
+            const netAmount = amount * (1 - painReduction);
+
+            state.patientPain = Math.min(100, state.patientPain + netAmount);
+            state.patientSatisfaction = Math.max(0, state.patientSatisfaction - netAmount * 0.4);
+            state.patientBPM = Math.min(160, 72 + Math.round(state.patientPain * 0.88));
+
+            if (state.patientPain > 40) audio.playDamage();
+            updateUI();
+        }
+
+        function applyCalm(type) {
+            audio.init();
+            if (type === 'spray') {
+                audio.playSpray();
+                state.patientPain = Math.max(0, state.patientPain - 15);
+                spawnFloatingText(canvasSize / 2, canvasSize / 2, "SOOTHING COOLING! ❄️", "#38bdf8");
+            } else if (type === 'toy') {
+                audio.playInject();
+                state.patientPain = Math.max(0, state.patientPain - 10);
+                state.patientSatisfaction = Math.min(100, state.patientSatisfaction + 5);
+                spawnFloatingText(canvasSize / 2, canvasSize / 2, "STRESS RELIEVED! ⚾", "#fbbf24");
+            } else if (type === 'music') {
+                audio.playFanfare();
+                state.patientPain = Math.max(0, state.patientPain - 8);
+                state.patientSatisfaction = Math.min(100, state.patientSatisfaction + 8);
+                spawnFloatingText(canvasSize / 2, canvasSize / 2, "LO-FI BEATS 🎵", "#c084fc");
+            }
+            state.patientBPM = Math.max(72, 72 + Math.round(state.patientPain * 0.88));
+            updateUI();
+        }
+
+        // --- RENDER GAME LOOP & 2.5D HEAD GRAPHICS ---
         function gameLoop() {
-            // Update Extraction Tension Logic
-            if (state.activeExtractingFollicle) {
-                const speedBonus = 1 + (state.upgrades.punch_speed * 0.3);
-                state.extractionTension += 1.8 * speedBonus;
-                
-                // Update tension UI bar
-                const tensionBar = document.getElementById('tension-bar');
-                tensionBar.style.height = `${Math.min(100, state.extractionTension)}%`;
+            renderScalpStage();
 
-                // Ideal zone is between 50% and 80%
-                if (state.extractionTension >= 50 && state.extractionTension <= 82) {
-                    if (Math.random() < 0.08) { // Pull threshold
-                        finishExtraction(true);
-                    }
-                } else if (state.extractionTension > 95) { // Over-tension / Snap
-                    finishExtraction(false);
-                }
+            // Dynamic face expression updates based on pain
+            const emojiEl = document.getElementById('patient-emoji');
+            const sweatEl = document.getElementById('sweat-icon');
+
+            if (state.patientPain > 60) {
+                emojiEl.innerText = "😫";
+                sweatEl.classList.remove('hidden');
+            } else if (state.patientPain > 30) {
+                emojiEl.innerText = "😬";
+                sweatEl.classList.remove('hidden');
+            } else {
+                emojiEl.innerText = CLIENT_PROFILES[state.currentClientIndex].emoji;
+                sweatEl.classList.add('hidden');
             }
-
-            // Pain passive impact on satisfaction
-            if (state.patientPain > 50) {
-                state.patientSatisfaction = Math.max(0, state.patientSatisfaction - 0.03);
-                updateUI();
-            }
-
-            // Render Scalp & Elements
-            renderCanvas();
 
             requestAnimationFrame(gameLoop);
         }
 
-        // --- RENDER SCALP ON CANVAS ---
-        function renderCanvas() {
+        function renderScalpStage() {
             ctx.clearRect(0, 0, canvasSize, canvasSize);
 
-            const patient = PATIENT_PROFILES[state.currentPatientIndex];
-
-            // 1. Draw Scalp Head Base
-            const centerX = canvasSize / 2;
-            const centerY = canvasSize / 2;
-            const headRadius = canvasSize * 0.42;
-
             ctx.save();
+            // Handle Zoom & Pan Centering
+            if (state.zoomScale > 1.0) {
+                const cx = canvasSize / 2;
+                const cy = canvasSize / 2;
+                ctx.translate(cx, cy);
+                ctx.scale(state.zoomScale, state.zoomScale);
+                ctx.translate(-cx, -cy);
+            }
+
+            const client = CLIENT_PROFILES[state.currentClientIndex];
+            const cx = canvasSize / 2;
+            const cy = canvasSize / 2;
+
+            // 1. Draw 2.5D Vector Neck & Shoulders Silhouette
+            ctx.fillStyle = '#1e293b';
             ctx.beginPath();
-            ctx.arc(centerX, centerY, headRadius, 0, Math.PI * 2);
-            ctx.fillStyle = patient.skinTone;
-            ctx.shadowColor = 'rgba(0,0,0,0.4)';
-            ctx.shadowBlur = 15;
+            ctx.moveTo(cx - 70, cy + 120);
+            ctx.quadraticCurveTo(cx, cy + 170, cx + 70, cy + 120);
+            ctx.lineTo(cx + 120, canvasSize);
+            ctx.lineTo(cx - 120, canvasSize);
+            ctx.closePath();
+            ctx.fill();
+
+            // 2. Draw Ears
+            ctx.fillStyle = client.skinShadow;
+            ctx.beginPath();
+            ctx.ellipse(cx - 138, cy, 14, 25, 0, 0, Math.PI * 2); // Left ear
+            ctx.ellipse(cx + 138, cy, 14, 25, 0, 0, Math.PI * 2); // Right ear
+            ctx.fill();
+
+            // 3. Draw Scalp Head Contour Shape
+            ctx.save();
+            ctx.shadowColor = 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, canvasSize * 0.38, canvasSize * 0.43, 0, 0, Math.PI * 2);
+            ctx.fillStyle = client.skinTone;
             ctx.fill();
             ctx.restore();
 
-            // Head ears/nose markers for orientation
-            ctx.fillStyle = patient.skinTone;
-            // Nose tip top
+            // Forehead / Brow Contour Line
             ctx.beginPath();
-            ctx.arc(centerX, centerY - headRadius + 5, 12, 0, Math.PI * 2);
+            ctx.arc(cx, cy - canvasSize * 0.28, canvasSize * 0.2, 0, Math.PI);
+            ctx.strokeStyle = client.skinShadow;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Nose Silhouette (Top View orientation marker)
+            ctx.fillStyle = client.skinShadow;
+            ctx.beginPath();
+            ctx.arc(cx, cy - canvasSize * 0.42, 10, 0, Math.PI * 2);
             ctx.fill();
 
-            // 2. Draw Donor Area Highlights / Follicles
+            // 4. Draw Anesthesia Numbing Zones Overlay
+            state.anesthesiaZones.forEach(z => {
+                ctx.beginPath();
+                ctx.arc(z.x, z.y, z.radius, 0, Math.PI * 2);
+                if (z.numbness > 0) {
+                    ctx.fillStyle = `rgba(56, 189, 248, ${0.15 + (z.numbness / 100) * 0.35})`;
+                    ctx.fill();
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                } else if (state.currentPhase === 1) {
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([3, 3]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            });
+
+            // 5. Draw Donor Follicles (Back/Sides Zone)
             state.donorFollicles.forEach(f => {
                 if (f.extracted) {
-                    // Empty harvested pore spot
                     ctx.beginPath();
-                    ctx.arc(f.x, f.y, 2.5, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(180, 80, 80, 0.4)';
+                    ctx.arc(f.x, f.y, 2, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
                     ctx.fill();
                 } else {
-                    // Intact donor hair
+                    // Follicle Pores
                     ctx.beginPath();
-                    ctx.arc(f.x, f.y, 3.5, 0, Math.PI * 2);
-                    ctx.fillStyle = '#222';
+                    ctx.arc(f.x, f.y, f.radius * 0.4, 0, Math.PI * 2);
+                    ctx.fillStyle = '#1e293b';
                     ctx.fill();
 
-                    // Draw hair strands
-                    ctx.strokeStyle = patient.hairColor;
+                    // Hair Strands according to graft density (1, 2, or 3 hairs)
+                    ctx.strokeStyle = client.hairColor;
                     ctx.lineWidth = 1.8;
-                    for (let h = 0; h < f.hairCount; h++) {
+                    for (let h = 0; h < f.graftType; h++) {
                         ctx.beginPath();
                         ctx.moveTo(f.x, f.y);
-                        const hairAngle = f.angle + (h - 1) * 0.25;
-                        ctx.lineTo(f.x + Math.cos(hairAngle) * 12, f.y + Math.sin(hairAngle) * 12);
+                        const hairAngle = f.angle + (h - 1) * 0.22;
+                        ctx.lineTo(f.x + Math.cos(hairAngle) * 11, f.y + Math.sin(hairAngle) * 11);
                         ctx.stroke();
                     }
                 }
             });
 
-            // 3. Highlight active harvesting target
-            if (state.activeExtractingFollicle) {
-                const f = state.activeExtractingFollicle;
+            // Active Pulling Visual Feedback Line
+            if (state.activeFollicle && state.dragStartPos) {
+                const f = state.activeFollicle;
                 ctx.beginPath();
-                ctx.arc(f.x, f.y, f.radius + 2, 0, Math.PI * 2);
-                ctx.strokeStyle = state.extractionTension > 80 ? '#ef4444' : '#10b981';
+                ctx.moveTo(f.x, f.y);
+                ctx.lineTo(f.x + Math.cos(f.angle) * 20, f.y + Math.sin(f.angle) * 20);
+                ctx.strokeStyle = '#fbbf24';
                 ctx.lineWidth = 3;
                 ctx.stroke();
             }
 
-            // 4. Draw Recipient Balding Sites / Implanted Grafts
+            // 6. Draw Recipient Target Slots & Implanted Grafts
             state.recipientSites.forEach(s => {
                 if (s.implanted) {
-                    // Freshly implanted graft
+                    // Micro-incision site
                     ctx.beginPath();
-                    ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
+                    ctx.arc(s.x, s.y, 2.5, 0, Math.PI * 2);
                     ctx.fillStyle = '#10b981';
                     ctx.fill();
 
-                    // Short stubble hair planted
-                    ctx.strokeStyle = patient.hairColor;
+                    // Planted Hair Stubble
+                    ctx.strokeStyle = client.hairColor;
                     ctx.lineWidth = 2;
-                    for (let h = 0; h < s.hairCount; h++) {
+                    for (let h = 0; h < s.graftType; h++) {
                         ctx.beginPath();
                         ctx.moveTo(s.x, s.y);
-                        const a = -Math.PI / 2 + (h - 0.5) * 0.3;
-                        ctx.lineTo(s.x + Math.cos(a) * 8, s.y + Math.sin(a) * 8);
+                        const hairAngle = -Math.PI / 2 + (h - 1) * 0.25;
+                        ctx.lineTo(s.x + Math.cos(hairAngle) * 9, s.y + Math.sin(hairAngle) * 9);
                         ctx.stroke();
                     }
                 } else {
-                    // Empty target incision micro-zone
+                    // Empty target slot
                     ctx.beginPath();
                     ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+                    ctx.fillStyle = 'rgba(244, 63, 94, 0.12)';
                     ctx.fill();
-                    ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
-                    ctx.lineWidth = 1.5;
+                    ctx.strokeStyle = 'rgba(244, 63, 94, 0.4)';
+                    ctx.lineWidth = 1;
                     ctx.setLineDash([2, 2]);
                     ctx.stroke();
                     ctx.setLineDash([]);
                 }
             });
+
+            ctx.restore();
         }
 
-        // --- UPDATE UI STATS ---
+        // --- FLOATING FEEDBACK TEXT ---
+        function spawnFloatingText(x, y, text, color) {
+            const container = document.getElementById('floating-overlay');
+            const el = document.createElement('div');
+            el.className = 'float-text text-xs';
+            el.style.left = `${x - 20}px`;
+            el.style.top = `${y - 10}px`;
+            el.style.color = color;
+            el.innerText = text;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 900);
+        }
+
+        // --- UPDATE UI METRICS ---
         function updateUI() {
             document.getElementById('cash-display').innerText = `$${state.cash}`;
-            document.getElementById('grafts-inventory').innerText = state.inventoryGrafts;
+            
+            const totalInventoryGrafts = state.inventory.single + state.inventory.double + state.inventory.triple;
+            document.getElementById('graft-summary-display').innerText = `${totalInventoryGrafts} Grafts (${state.inventory.single}x1, ${state.inventory.double}x2, ${state.inventory.triple}x3)`;
 
-            const satisBar = document.getElementById('satisfaction-bar');
-            satisBar.style.width = `${state.patientSatisfaction}%`;
-            document.getElementById('satisfaction-val').innerText = `${Math.round(state.patientSatisfaction)}%`;
+            document.getElementById('satis-bar').style.width = `${state.patientSatisfaction}%`;
+            document.getElementById('satis-val').innerText = `${Math.round(state.patientSatisfaction)}%`;
 
-            const painBar = document.getElementById('pain-bar');
-            painBar.style.width = `${state.patientPain}%`;
+            document.getElementById('pain-bar').style.width = `${state.patientPain}%`;
             document.getElementById('pain-val').innerText = `${Math.round(state.patientPain)}%`;
+            document.getElementById('bpm-display').innerText = state.patientBPM;
 
-            // Coverage Percentage
-            const totalRecipient = state.recipientSites.length;
-            const implantedCount = state.recipientSites.filter(s => s.implanted).length;
-            const coverage = Math.round((implantedCount / Math.max(1, totalRecipient)) * 100);
+            const coverage = Math.round((state.implantsTotal / Math.max(1, state.recipientSites.length)) * 100);
             document.getElementById('coverage-percentage').innerText = `${coverage}%`;
         }
 
@@ -912,51 +1090,47 @@
             document.getElementById('shop-modal').classList.remove('hidden');
         }
 
-        function closeShop() {
-            document.getElementById('shop-modal').classList.add('hidden');
-        }
-
         function renderShopItems() {
             const container = document.getElementById('shop-items-container');
             container.innerHTML = '';
 
-            SHOP_ITEMS.forEach(item => {
+            SHOP_UPGRADES.forEach(item => {
                 const currentLvl = state.upgrades[item.id] || 0;
                 const isMax = currentLvl >= item.maxLevel;
                 const cost = item.cost * (currentLvl + 1);
 
-                const itemEl = document.createElement('div');
-                itemEl.className = 'bg-slate-800 rounded-2xl p-3 border border-slate-700 flex items-center justify-between gap-3';
-                itemEl.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center text-lg border border-teal-500/30">
+                const div = document.createElement('div');
+                div.className = 'bg-slate-800 rounded-2xl p-2.5 border border-slate-700 flex items-center justify-between gap-2';
+                div.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center text-sm border border-teal-500/30">
                             <i class="fa-solid ${item.icon}"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-sm text-slate-200">${item.name}</h4>
-                            <p class="text-[10px] text-slate-400">${item.desc}</p>
-                            <span class="text-[10px] font-bold text-teal-400">Lvl ${currentLvl}/${item.maxLevel}</span>
+                            <h4 class="font-bold text-xs text-slate-100">${item.name}</h4>
+                            <p class="text-[9px] text-slate-400">${item.desc}</p>
+                            <span class="text-[9px] font-bold text-teal-400">Level ${currentLvl}/${item.maxLevel}</span>
                         </div>
                     </div>
-                    <button class="buy-upgrade-btn px-3 py-2 rounded-xl text-xs font-black uppercase ${isMax ? 'bg-slate-700 text-slate-500' : 'bg-amber-500 hover:bg-amber-400 text-slate-950 btn-arcade'}" 
+                    <button class="buy-upgrade-btn px-2.5 py-1.5 rounded-xl text-xs font-black uppercase ${isMax ? 'bg-slate-700 text-slate-500' : 'bg-amber-500 hover:bg-amber-400 text-slate-950 btn-arcade'}" 
                             data-id="${item.id}" ${isMax || state.cash < cost ? 'disabled' : ''}>
                         ${isMax ? 'MAX' : `$${cost}`}
                     </button>
                 `;
-                container.appendChild(itemEl);
+                container.appendChild(div);
             });
 
             document.querySelectorAll('.buy-upgrade-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const id = btn.dataset.id;
-                    const item = SHOP_ITEMS.find(i => i.id === id);
+                    const item = SHOP_UPGRADES.find(i => i.id === id);
                     const currentLvl = state.upgrades[id] || 0;
                     const cost = item.cost * (currentLvl + 1);
 
                     if (state.cash >= cost && currentLvl < item.maxLevel) {
                         state.cash -= cost;
                         state.upgrades[id]++;
-                        audio.playSuccess();
+                        audio.playFanfare();
                         updateUI();
                         renderShopItems();
                     }
@@ -964,25 +1138,22 @@
             });
         }
 
-        // --- SURGERY FINISH & POST-OP REVEAL TIMELAPSE ---
+        // --- FINISH SURGERY & 6 MONTH TIMELAPSE ---
         function finishSurgery() {
-            audio.playSuccess();
+            audio.playFanfare();
 
-            // Calculate score & star rating
-            const coverageRatio = state.implantedGraftsCount / Math.max(1, state.recipientSites.length);
+            const coverageRatio = state.implantsTotal / Math.max(1, state.recipientSites.length);
             let stars = 1;
             if (coverageRatio >= 0.5 && state.patientSatisfaction >= 60) stars = 2;
             if (coverageRatio >= 0.85 && state.patientSatisfaction >= 80) stars = 3;
 
-            // Populate Results Modal
-            document.getElementById('res-harvested').innerText = state.harvestedGraftsCount;
-            document.getElementById('res-implants').innerText = state.implantedGraftsCount;
+            document.getElementById('res-harvested').innerText = `${state.harvestedTotal} Grafts`;
+            document.getElementById('res-implants').innerText = `${state.implantsTotal} Grafts`;
             document.getElementById('res-satisfaction').innerText = `${Math.round(state.patientSatisfaction)}%`;
-            
-            const bonusEarned = Math.round(state.implantedGraftsCount * 20 * (state.patientSatisfaction / 100));
-            document.getElementById('res-cash').innerText = `$${bonusEarned}`;
 
-            // Render Stars UI
+            const payout = Math.round(state.implantsTotal * 35 * (state.patientSatisfaction / 100));
+            document.getElementById('res-cash').innerText = `$${payout}`;
+
             const starsContainer = document.getElementById('stars-container');
             starsContainer.innerHTML = '';
             for (let i = 0; i < 3; i++) {
@@ -991,57 +1162,43 @@
                 starsContainer.appendChild(star);
             }
 
-            // Client Review Text
             const reviews = [
-                "Hmm... my head hurts and it's still sparse. Could be better!",
-                "Great job doctor! The hairline looks much more natural now!",
-                "ABSOLUTELY INCREDIBLE! I look 10 years younger! Follicle Master indeed!"
+                "Ouch... my head was hurting the whole time and density is lacking!",
+                "Great work doctor! Natural hairline restored!",
+                "ABSOLUTELY MASTERFUL SURGERY! 100% density restored cleanly!"
             ];
             document.getElementById('result-feedback').innerText = `"${reviews[stars - 1]}"`;
 
-            // Draw Post-Op Fast-Forward Timelapse on Preview Canvas
             renderTimelapsePreview();
-
             document.getElementById('result-modal').classList.remove('hidden');
         }
 
-        // Render full lush hair growth preview
         function renderTimelapsePreview() {
             const tCanvas = document.getElementById('timelapse-canvas');
             const tCtx = tCanvas.getContext('2d');
-            tCanvas.width = 200;
-            tCanvas.height = 200;
+            tCanvas.width = 180;
+            tCanvas.height = 180;
 
-            const patient = PATIENT_PROFILES[state.currentPatientIndex];
+            const client = CLIENT_PROFILES[state.currentClientIndex];
 
-            // Scalp Base
+            // Head Base
             tCtx.beginPath();
-            tCtx.arc(100, 100, 80, 0, Math.PI * 2);
-            tCtx.fillStyle = patient.skinTone;
+            tCtx.arc(90, 90, 72, 0, Math.PI * 2);
+            tCtx.fillStyle = client.skinTone;
             tCtx.fill();
 
-            // Donor Area Hair
-            state.donorFollicles.forEach(f => {
-                const scale = 200 / canvasSize;
-                tCtx.strokeStyle = patient.hairColor;
-                tCtx.lineWidth = 1.5;
-                tCtx.beginPath();
-                tCtx.moveTo(f.x * scale, f.y * scale);
-                tCtx.lineTo(f.x * scale + 5, f.y * scale + 5);
-                tCtx.stroke();
-            });
-
-            // Grown Implanted Hair (6 Months Later Fast-Forward)
+            // Full Grown Hair (6 Months Fast Forward)
             state.recipientSites.forEach(s => {
-                const scale = 200 / canvasSize;
+                const scale = 180 / canvasSize;
                 if (s.implanted) {
-                    tCtx.strokeStyle = patient.hairColor;
+                    tCtx.strokeStyle = client.hairColor;
                     tCtx.lineWidth = 2.5;
-                    for (let i = 0; i < 4; i++) { // Extra thick growth
+                    const hairCount = (s.graftType || 2) + 1;
+                    for (let i = 0; i < hairCount; i++) {
                         tCtx.beginPath();
                         tCtx.moveTo(s.x * scale, s.y * scale);
-                        const angle = -Math.PI / 2 + (i - 1.5) * 0.3;
-                        tCtx.lineTo(s.x * scale + Math.cos(angle) * 16, s.y * scale + Math.sin(angle) * 16);
+                        const angle = -Math.PI / 2 + (i - 1) * 0.3;
+                        tCtx.lineTo(s.x * scale + Math.cos(angle) * 15, s.y * scale + Math.sin(angle) * 15);
                         tCtx.stroke();
                     }
                 }
