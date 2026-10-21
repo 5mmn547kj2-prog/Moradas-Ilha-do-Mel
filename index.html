@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CT Assault</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<style>
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;touch-action:none;font-family:Verdana,Tahoma,sans-serif;color:#ffd24a}
+#c{position:fixed;inset:0;width:100%;height:100%}
+#hud{position:fixed;inset:0;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.t{position:absolute;font-size:15px;font-weight:bold;text-shadow:1px 1px 0 #000,0 0 6px #000;line-height:1.4}
+#tl{left:14px;top:10px}#tr{right:14px;top:10px;text-align:right}
+#hp{left:14px;bottom:10px;font-size:26px;display:none}
+#cross{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px}
+#cross:before,#cross:after{content:"";position:absolute;background:#5f5}
+#cross:before{left:10px;top:0;width:2px;height:22px}#cross:after{top:10px;left:0;height:2px;width:22px}
+#cross.hit:before,#cross.hit:after{background:#f33}
+#dmg{position:fixed;inset:0;background:radial-gradient(transparent 40%,rgba(200,0,0,.7));opacity:0;transition:opacity .3s}
+#jb,#jk{position:fixed;border-radius:50%;display:none}
+#jb{width:110px;height:110px;border:2px solid rgba(255,255,255,.4);margin:-55px 0 0 -55px}
+#jk{width:50px;height:50px;background:rgba(255,255,255,.45);margin:-25px 0 0 -25px}
+.b{position:fixed;border-radius:50%;background:rgba(20,20,20,.45);border:2px solid rgba(255,210,74,.7);color:#ffd24a;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;pointer-events:auto}
+#fire{right:calc(26px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:96px;height:96px;font-size:15px;background:rgba(200,40,20,.45)}
+#jump{right:calc(140px + env(safe-area-inset-right));bottom:calc(24px + env(safe-area-inset-bottom));width:60px;height:60px}
+#rel{right:calc(40px + env(safe-area-inset-right));bottom:calc(140px + env(safe-area-inset-bottom));width:56px;height:56px}
+#swap{right:calc(110px + env(safe-area-inset-right));bottom:calc(110px + env(safe-area-inset-bottom));width:56px;height:56px}
+#scope{right:calc(180px + env(safe-area-inset-right));bottom:calc(100px + env(safe-area-inset-bottom));width:50px;height:50px;display:none}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:5}
+#ov h1{margin:0 0 8px;font-size:30px;letter-spacing:1px}
+#ov p{margin:4px 0 18px;max-width:440px;font-size:14px;line-height:1.5;color:#ddd}
+#go{padding:14px 34px;font-size:18px;font-weight:bold;background:#ffd24a;color:#111;border:0;border-radius:4px;font-family:inherit}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="dmg"></div>
+<div id="hud">
+  <div id="cross"></div>
+  <div class="t" id="tl"></div>
+  <div class="t" id="tr"></div>
+  <div class="t" id="hp"></div>
+</div>
+<div id="jb"></div><div id="jk"></div>
+<div class="b" id="fire" data-a="fire">FIRE</div>
+<div class="b" id="jump" data-a="jump">JUMP</div>
+<div class="b" id="rel" data-a="reload">RLD</div>
+<div class="b" id="swap" data-a="swap">SWAP</div>
+<div class="b" id="scope" data-a="scope">ZOOM</div>
+<div id="ov">
+  <h1 id="ovt">CT ASSAULT</h1>
+  <p id="ovp">You are the Counter-Terrorist team. Defend the hostages from the Terrorists. Lose two hostages, or die, and the mission fails.<br>Left side: move. Right side: look. Rotate your phone to landscape.</p>
+  <button id="go">Start</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
