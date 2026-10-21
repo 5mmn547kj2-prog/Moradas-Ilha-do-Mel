@@ -1,22 +1,35 @@
 // CT Assault - CS 1.6 inspired FPS for mobile browsers. Needs three.js r128 (loaded in index.html).
 const $ = id => document.getElementById(id);
 const rnd = (a, b) => a + Math.random() * (b - a);
-const R = new THREE.WebGLRenderer({ canvas: $('c') });
-R.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+const R = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true, powerPreference: 'high-performance' });
+R.setPixelRatio(Math.min(devicePixelRatio, 2));
+R.outputEncoding = THREE.sRGBEncoding;
+R.toneMapping = THREE.ACESFilmicToneMapping;
+R.toneMappingExposure = 1.12;
+R.shadowMap.enabled = true;
+R.shadowMap.type = THREE.PCFSoftShadowMap;
 const S = new THREE.Scene();
-S.background = new THREE.Color(0x20252a);
-S.fog = new THREE.Fog(0x20252a, 14, 80);
+S.background = new THREE.Color(0x333b43);
+S.fog = new THREE.Fog(0x333b43, 22, 105);
 const cam = new THREE.PerspectiveCamera(75, 1, 0.05, 100);
 cam.rotation.order = 'YXZ'; S.add(cam);
 function resize() { R.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
-S.add(new THREE.HemisphereLight(0xffffff, 0x4a4a4a, 0.85));
+S.add(new THREE.HemisphereLight(0xdde9ff, 0x444b55, 1.05));
+const sun = new THREE.DirectionalLight(0xffe6c2, 1.6);
+sun.position.set(-18, 28, -10);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -36; sun.shadow.camera.right = 36;
+sun.shadow.camera.top = 44; sun.shadow.camera.bottom = -44;
+sun.shadow.bias = -0.0005;
+S.add(sun);
 [[0, 6, -14], [0, 6, 10], [0, 6, 33]].forEach(p => { const l = new THREE.PointLight(0xfff0cc, 0.55, 45); l.position.set(...p); S.add(l); });
 
 // ---------- Procedural textures (90s-style pixel look) ----------
 function tex(f) {
   const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); f(x);
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; t.anisotropy = 4; return t;
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = Math.min(8, R.capabilities.getMaxAnisotropy()); return t;
 }
 function grain(x, n, a) { for (let i = 0; i < n; i++) { x.fillStyle = Math.random() < 0.5 ? `rgba(0,0,0,${a})` : `rgba(255,255,255,${a})`; x.fillRect(rnd(0, 128) | 0, rnd(0, 128) | 0, 2, 2); } }
 function cont(col) {
@@ -52,20 +65,25 @@ const TX = {
   }),
   ceil: tex(x => { x.fillStyle = '#3a3d40'; x.fillRect(0, 0, 128, 128); x.fillStyle = 'rgba(255,255,255,.08)'; x.fillRect(0, 0, 128, 3); x.fillRect(0, 0, 3, 128); grain(x, 900, 0.1); })
 };
-const MT = {}; for (const k in TX) MT[k] = new THREE.MeshLambertMaterial({ map: TX[k] });
+const MT = {};
+for (const k in TX) {
+  MT[k] = new THREE.MeshStandardMaterial({
+    map: TX[k], roughness: 0.88, metalness: k.startsWith('cont') ? 0.18 : 0.04
+  });
+}
 
 // ---------- Map: warehouse inspired by cs_assault (T spawn north, hostage room south) ----------
 const walls = [], wallMeshes = [];
 function box(x, z, w, d, h, k) {
   const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv, sz = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
   for (let f = 0; f < 6; f++) for (let i = 0; i < 4; i++) { const j = f * 4 + i; uv.setXY(j, uv.getX(j) * sz[f][0] / 2, uv.getY(j) * sz[f][1] / 2); }
-  const m = new THREE.Mesh(g, MT[k]); m.position.set(x, h / 2, z); S.add(m); wallMeshes.push(m);
+  const m = new THREE.Mesh(g, MT[k]); m.position.set(x, h / 2, z); m.castShadow = true; m.receiveShadow = true; S.add(m); wallMeshes.push(m);
   walls.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2, h });
 }
 TX.floor.repeat.set(15, 20); TX.ceil.repeat.set(15, 20);
-const fl = new THREE.Mesh(new THREE.PlaneGeometry(60, 80), MT.floor); fl.rotation.x = -Math.PI / 2; S.add(fl); wallMeshes.push(fl);
+const fl = new THREE.Mesh(new THREE.PlaneGeometry(60, 80), MT.floor); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl); wallMeshes.push(fl);
 const ce = new THREE.Mesh(new THREE.PlaneGeometry(60, 80), MT.ceil); ce.rotation.x = Math.PI / 2; ce.position.y = 7; S.add(ce);
-const lampM = new THREE.MeshBasicMaterial({ color: 0xfff2c0 });
+const lampM = new THREE.MeshBasicMaterial({ color: 0xffe6ad });
 for (let z = -32; z <= 36; z += 17) for (const x of [-15, 0, 15]) { const l = new THREE.Mesh(new THREE.BoxGeometry(3, 0.15, 0.6), lampM); l.position.set(x, 6.9, z); S.add(l); }
 box(0, -40.5, 62, 1, 7, 'brick'); box(0, 40.5, 62, 1, 7, 'brick'); box(-30.5, 0, 1, 82, 7, 'brick'); box(30.5, 0, 1, 82, 7, 'brick');
 box(-22, -28, 16, 1, 5, 'concrete'); box(0, -28, 16, 1, 5, 'concrete'); box(22, -28, 16, 1, 5, 'concrete'); // T spawn wall, doorways at x=+-11
@@ -106,13 +124,13 @@ function panTo(x, z) { const dx = x - P.x, dz = z - P.z, d = Math.hypot(dx, dz) 
 
 // ---------- Weapons (CS 1.6 style stats) ----------
 const WP = [
-  { n: 'USP .45', dmg: 34, rof: 0.17, mag: 12, res: 100, spr: 0.012, rec: 0.025, auto: false, snd: [0.35, 0.12, 2500] },
-  { n: 'M4A1', dmg: 33, rof: 0.09, mag: 30, res: 90, spr: 0.02, rec: 0.018, auto: true, snd: [0.5, 0.14, 3500] },
-  { n: 'AWP', dmg: 115, rof: 1.45, mag: 10, res: 30, spr: 0.002, rec: 0.07, auto: false, snd: [0.9, 0.4, 1800] }
+  { n: 'USP .45', dmg: 34, rof: 0.17, mag: 12, res: 100, spr: 0.006, rec: 0.008, auto: false, snd: [0.35, 0.12, 2500] },
+  { n: 'M4A1', dmg: 33, rof: 0.09, mag: 30, res: 90, spr: 0.009, rec: 0.005, auto: true, snd: [0.5, 0.14, 3500] },
+  { n: 'AWP', dmg: 115, rof: 1.45, mag: 10, res: 30, spr: 0.001, rec: 0.025, auto: false, snd: [0.9, 0.4, 1800] }
 ];
 const P = { x: 0, y: 0, z: 31, vy: 0, yaw: 0, pitch: 0, hp: 100, w: 1, cd: 0, rl: 0, rlT: 1, zoom: false, semi: true, kick: 0, draw: 0, walk: 0, step: 0 };
 WP.forEach(w => { w.ammo = w.mag; w.reserve = w.res; });
-function bx(w, h, d, col, x, y, z, p) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: col })); m.position.set(x, y, z); p.add(m); return m; }
+function bx(w, h, d, col, x, y, z, p) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: col, roughness: 0.62, metalness: 0.22 })); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; p.add(m); return m; }
 const mzTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 2, 32, 32, 30); g.addColorStop(0, '#fff'); g.addColorStop(0.3, '#ffd060'); g.addColorStop(1, 'rgba(255,120,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
 function mkGun(i) {
   const g = new THREE.Group(), D = 0x1c1c1e, G = 0x4a4d50, SK = 0xc99a74, SL = 0x2c3e60; let mz;
@@ -130,11 +148,11 @@ const flash = new THREE.PointLight(0xffcc66, 0, 8); flash.position.set(0.2, -0.1
 // ---------- Characters ----------
 function human(c) {
   const g = new THREE.Group(), parts = [];
-  const mk = (w, h, d, col, x, y, z) => { const geo = new THREE.BoxGeometry(w, h, d); geo.translate(0, -h / 2, 0); const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: col })); m.position.set(x, y, z); g.add(m); parts.push(m); return m; };
-  const legL = mk(.2, .8, .22, c.pants, -.14, .8, 0), legR = mk(.2, .8, .22, c.pants, .14, .8, 0);
-  mk(.5, .62, .28, c.shirt, 0, 1.42, 0);
+  const mk = (w, h, d, col, x, y, z) => { const geo = new THREE.BoxGeometry(w, h, d); geo.translate(0, -h / 2, 0); const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.72, metalness: 0.03 })); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; g.add(m); parts.push(m); return m; };
+  const legL = mk(.23, .8, .25, c.pants, -.14, .8, 0), legR = mk(.23, .8, .25, c.pants, .14, .8, 0);
+  mk(.58, .66, .34, c.shirt, 0, 1.42, 0);
   const armL = mk(.14, .6, .16, c.shirt, -.34, 1.4, 0), armR = mk(.14, .6, .16, c.shirt, .34, 1.4, 0);
-  const head = mk(.26, .28, .26, c.skin, 0, 1.72, 0); head.userData.head = true;
+  const head = mk(.34, .34, .34, c.skin, 0, 1.72, 0); head.userData.head = true;
   return { g, parts, legL, legR, armL, armR };
 }
 const hostages = [];
@@ -148,7 +166,7 @@ function spawnBot() {
   bx(.2, .05, .02, 0xd0a080, 0, 1.6, .135, h.g);
   bx(.06, .08, .5, 0x222222, .12, 1.0, .35, h.g);
   h.armL.rotation.x = -1.2; h.armR.rotation.x = -1.4;
-  Object.assign(h, { x: rnd(-22, 22), z: -36, y: 0, hp: 100, cd: 1 + Math.random(), ph: Math.random() * 6, w: 0, dead: false, t: 0 });
+  Object.assign(h, { x: rnd(-22, 22), z: -36, y: 0, hp: 100, cd: 1.5 + Math.random() * 1.2, ph: Math.random() * 6, w: 0, dead: false, t: 0 });
   h.parts.forEach(p => p.userData.bot = h); h.g.position.set(h.x, 0, h.z); S.add(h.g); h.g.updateMatrixWorld(true); bots.push(h);
 }
 
@@ -217,7 +235,7 @@ function shoot() {
   if (w.ammo <= 0) { snd(0.2, 0.05, 300, 'tone'); P.cd = 0.3; reload(); return; }
   if (!w.auto && !P.semi) return;
   P.semi = false; w.ammo--; P.cd = w.rof; P.kick = 0.1;
-  const sp = w.spr * (P.zoom || P.w !== 2 ? 1 : 12) * (P.y > 0.01 ? 5 : 1) * (1 + Math.hypot(mv.x, mv.y) * 2);
+  const sp = w.spr * (P.zoom || P.w !== 2 ? 1 : 8) * (P.y > 0.01 ? 2.5 : 1) * (1 + Math.hypot(mv.x, mv.y) * 0.8);
   ray.setFromCamera({ x: (Math.random() - 0.5) * sp * 6, y: (Math.random() - 0.5) * sp * 6 }, cam);
   const hits = ray.intersectObjects(wallMeshes.concat(...bots.map(b => b.parts)), false);
   if (hits.length) {
@@ -228,7 +246,7 @@ function shoot() {
       if (b.hp <= 0) { feed('You killed a Terrorist' + (u.head ? ' (headshot)' : '')); b.dead = true; bots = bots.filter(x => x !== b); corpses.push(b); }
     } else { decal(h.point, h.face.normal.clone().transformDirection(h.object.matrixWorld)); burst(h.point, 0x9a9488, 4); }
   }
-  P.pitch += w.rec * (0.6 + Math.random() * 0.8); P.yaw += (Math.random() - 0.5) * w.rec;
+  P.pitch += w.rec * (0.25 + Math.random() * 0.25); P.yaw += (Math.random() - 0.5) * w.rec * 0.25;
   gunSnd(w, 0); guns[P.w].userData.mz.visible = true; guns[P.w].userData.mz.rotation.z = rnd(0, 6); flash.intensity = 2;
   setTimeout(() => { guns[P.w].userData.mz.visible = false; flash.intensity = 0; }, 45);
   if (w.ammo === 0) reload();
@@ -309,8 +327,8 @@ function update(dt) {
     b.legL.rotation.x = Math.sin(b.w) * 0.7 * (mvg ? 1 : 0); b.legR.rotation.x = -b.legL.rotation.x;
     b.cd -= dt;
     if (b.cd <= 0 && td < 30 && seen) {
-      b.cd = 0.5 + Math.random() * 0.7; gunSnd(WP[1], panTo(b.x, b.z), Math.max(0.12, 0.6 - td * 0.02));
-      if (t === P) { if (Math.random() < Math.max(0.12, 0.55 - td / 55)) hurt(8 + Math.random() * 6); }
+      b.cd = 0.85 + Math.random() * 0.9; gunSnd(WP[1], panTo(b.x, b.z), Math.max(0.12, 0.6 - td * 0.02));
+      if (t === P) { if (Math.random() < Math.max(0.06, 0.34 - td / 75)) hurt(8 + Math.random() * 6); }
       else if (Math.random() < 0.6) { t.hp -= 12; if (t.hp <= 0) { t.alive = false; t.g.rotation.x = Math.PI / 2; t.g.position.y = 0.2; feed('Terrorist killed a Hostage'); } }
     }
   }
