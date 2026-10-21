@@ -144,7 +144,14 @@ const gunM = {
   skin: new THREE.MeshStandardMaterial({ color: 0xb98562, roughness: 0.9 })
 };
 function gunBox(p, w,h,d, mat, x,y,z, bevel=0) {
-  let geo = new THREE.BoxGeometry(w,h,d);
+  // Rounded, bevelled hard-surface parts: avoids the toy-like sharp-box silhouette.
+  const r = Math.max(.002, Math.min(w,h,d) * (bevel || .085));
+  const sh = new THREE.Shape(), a=w/2-r, b=h/2-r;
+  sh.moveTo(-a-r,-b); sh.lineTo(a,-b); sh.quadraticCurveTo(a+r,-b,a+r,-b+r);
+  sh.lineTo(a+r,b); sh.quadraticCurveTo(a+r,b+r,a,b+r); sh.lineTo(-a,b+r);
+  sh.quadraticCurveTo(-a-r,b+r,-a-r,b); sh.lineTo(-a-r,-b+r); sh.quadraticCurveTo(-a-r,-b,-a,-b);
+  const geo = new THREE.ExtrudeGeometry(sh,{depth:Math.max(.004,d-2*r),bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:r*.42,bevelThickness:r*.42,curveSegments:4});
+  geo.translate(0,0,-(d-2*r)/2);
   const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; p.add(m); return m;
 }
 function gunCyl(p, r1,r2,len,mat,x,y,z,segments=16) {
@@ -226,6 +233,56 @@ function mkGun(i) {
 const guns = [0, 1, 2].map(mkGun);
 const flash = new THREE.PointLight(0xffcc66, 0, 8); flash.position.set(0.2, -0.1, -1); cam.add(flash);
 
+// ---------- Imported character asset ----------
+// Rigged, textured soldier GLB with Idle/Walk/Run/Fire/Reload/Death clips.
+// Hosted by the asset author; procedural character remains as a graceful fallback.
+let soldierAsset = null, soldierClips = [];
+if (THREE.GLTFLoader && THREE.SkeletonUtils) {
+  const soldierLoader = new THREE.GLTFLoader();
+  soldierLoader.load('https://www.shanebrumback.com/models/soldier_rigged.glb', gltf => {
+    soldierAsset = gltf.scene;
+    soldierClips = gltf.animations || [];
+    soldierAsset.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
+      if (o.material) {
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.forEach(m => { if ('roughness' in m && m.roughness < 0.18) m.roughness = 0.32; });
+      }
+    });
+    // Normalize once so the imported model fits the game's ~1.9 m character scale.
+    const bb = new THREE.Box3().setFromObject(soldierAsset), size = bb.getSize(new THREE.Vector3());
+    const h = Math.max(0.001, size.y);
+    soldierAsset.scale.setScalar(1.88 / h);
+    soldierAsset.updateMatrixWorld(true);
+    const bb2 = new THREE.Box3().setFromObject(soldierAsset), center = bb2.getCenter(new THREE.Vector3());
+    soldierAsset.position.set(-center.x, -bb2.min.y, -center.z);
+    console.info('Imported rigged soldier loaded:', soldierClips.map(c => c.name).join(', '));
+  }, undefined, err => console.warn('Rigged soldier asset unavailable; using built-in fallback model.', err));
+}
+function cloneImportedSoldier() {
+  if (!soldierAsset) return null;
+  const root = new THREE.Group();
+  const model = THREE.SkeletonUtils.clone(soldierAsset);
+  root.add(model);
+  const mixer = new THREE.AnimationMixer(model), actions = {};
+  soldierClips.forEach(clip => {
+    const action = mixer.clipAction(clip);
+    if (/Fire|Reload|Death|Jump/i.test(clip.name)) { action.setLoop(THREE.LoopOnce, 1); action.clampWhenFinished = true; }
+    actions[clip.name.toLowerCase()] = action;
+  });
+  const play = name => {
+    const key = Object.keys(actions).find(k => k === name.toLowerCase() || k.includes(name.toLowerCase()));
+    if (!key || root.userData.currentAnim === key) return;
+    const next = actions[key]; next.reset().play();
+    if (root.userData.currentAction) root.userData.currentAction.crossFadeTo(next, 0.18, false);
+    root.userData.currentAction = next; root.userData.currentAnim = key;
+  };
+  root.userData.mixer = mixer; root.userData.play = play; root.userData.model = model;
+  play('Idle');
+  return root;
+}
+
 // ---------- Characters ----------
 // More anatomical low-poly characters: tapered torso, rounded joints, boots,
 // layered tactical vest, pouches, helmet, webbing and a visible held rifle.
@@ -280,12 +337,37 @@ function human(c) {
   // shoulder straps and small radio/utility kit
   for(const side of [-1,1]) { const strap=limbMesh(g,new THREE.BoxGeometry(.045,.42,.025),web,side*.13,1.43,-.155,parts); strap.rotation.z=side*.18; }
   limbMesh(g,new THREE.BoxGeometry(.105,.17,.10),cm(0x202622,.9),-.205,1.42,.06,parts);
-  // compact rifle silhouette carried in front, muzzle points along -Z
-  const rifle=new THREE.Group(); g.add(rifle); rifle.position.set(.12,1.16,-.27); rifle.rotation.x=-.10;
-  limbMesh(rifle,new THREE.BoxGeometry(.075,.075,.30),metal,0,0,-.12,parts);
-  limbMesh(rifle,new THREE.CylinderGeometry(.014,.014,.34,10),metal,0,.012,-.39,parts).rotation.x=Math.PI/2;
-  limbMesh(rifle,new THREE.BoxGeometry(.075,.12,.12),web,0,-.07,.04,parts);
-  limbMesh(rifle,new THREE.BoxGeometry(.055,.13,.07),web,0,-.12,-.06,parts).rotation.x=-.18;
+  // Detailed enemy carbine, with rounded receiver, barrel, gas block, rail,
+  // handguard ribs, adjustable stock, pistol grip, curved magazine, sights and muzzle device.
+  const rifle=new THREE.Group(); g.add(rifle); rifle.position.set(.13,1.18,-.31); rifle.rotation.x=-.08;
+  const rmat=cm(0x202321,.42,.68), rpoly=cm(0x242720,.88,.02), rblack=cm(0x111413,.62,.18), rsteel=cm(0x353a38,.3,.82);
+  const rb=(w,h,d,mat,x,y,z)=>limbMesh(rifle,new THREE.BoxGeometry(w,h,d),mat,x,y,z,parts);
+  const rc=(r,len,mat,x,y,z,n=14)=>{const m=limbMesh(rifle,new THREE.CylinderGeometry(r,r,len,n),mat,x,y,z,parts);m.rotation.x=Math.PI/2;return m;};
+  // Receiver and upper rail
+  rb(.095,.105,.29,rmat,0,.012,-.15);
+  rb(.088,.025,.34,rblack,0,.075,-.23);
+  rb(.09,.055,.22,rsteel,0,.015,-.39);
+  // Long handguard with individually separated rail slots
+  rb(.092,.083,.32,rpoly,0,.012,-.43);
+  for(let k=0;k<9;k++){rb(.101,.009,.021,k%2?rblack:rmat,0,.06,-.31-k*.032); rb(.009,.074,.019,rblack,-.049,.012,-.31-k*.032);rb(.009,.074,.019,rblack,.049,.012,-.31-k*.032);}
+  // Barrel, front sight/gas block and slotted flash hider
+  rc(.014,.39,rsteel,0,.018,-.72,16); rb(.105,.065,.065,rblack,0,.018,-.60);
+  rc(.022,.075,rblack,0,.018,-.94,12); rc(.018,.018,rsteel,0,.018,-.985,12);
+  for(let k=0;k<4;k++)rb(.041,.012,.008,rblack,0,.018,-.952+k*.016);
+  // Stock and cheek pad
+  rb(.075,.09,.20,rpoly,0,.008,.105); rb(.082,.10,.12,rblack,0,.008,.24);
+  rb(.086,.12,.035,rpoly,0,.005,.315); rb(.075,.035,.12,rblack,0,.065,.13);
+  // Angled pistol grip, trigger guard and curved magazine
+  const grip=rb(.052,.13,.075,rpoly,0,-.09,-.025); grip.rotation.x=-.22;
+  rb(.042,.012,.072,rblack,0,-.052,-.09); rb(.009,.045,.055,rsteel,0,-.066,-.10);
+  const mag=rb(.061,.17,.095,rblack,0,-.12,-.22);mag.rotation.x=-.14;
+  rb(.065,.022,.09,rsteel,0,-.207,-.21);
+  // Optic and iron sights, mount rings, and small glass lens
+  rb(.044,.035,.09,rblack,0,.108,-.25); rc(.024,.07,rblack,0,.13,-.25,14);
+  const lens=limbMesh(rifle,new THREE.CylinderGeometry(.019,.019,.006,16),cm(0x294b51,.16,.5),0,.13,-.29,parts);lens.rotation.x=Math.PI/2;
+  rb(.018,.045,.025,rsteel,0,.105,-.49); rb(.016,.04,.025,rsteel,0,.10,-.91);
+  // Sling swivels and a visible sling along the receiver side
+  const sling=rb(.012,.20,.018,rblack,.055,-.025,-.02);sling.rotation.x=-.18;
   const all=[...g.children];
   return {g,parts,legL,legR,armL:null,armR:null,head};
 }
@@ -301,9 +383,21 @@ function spawnBot() {
     {shirt:0x45483b, pants:0x303129, skin:0xb17f5d, vest:0x353b30, plate:0x42483a, helmet:0x4a4e3e, pouch:0x252a23},
     {shirt:0x51443a, pants:0x292a26, skin:0x8d654f, vest:0x39332c, plate:0x4a4034, helmet:0x37342e, pouch:0x262520}
   ];
-  const h = human(palette[Math.random()*palette.length|0]);
-  // Equipment and weapon are built into the detailed character rig.
-  Object.assign(h, { x: rnd(-22, 22), z: -36, y: 0, hp: 100, cd: 1.5 + Math.random() * 1.2, ph: Math.random() * 6, w: 0, dead: false, t: 0 });
+  let h;
+  const imported = cloneImportedSoldier();
+  if (imported) {
+    h = { g: imported, parts: [], legL: null, legR: null, imported: true };
+    imported.traverse(o => { if (o.isMesh) h.parts.push(o); });
+    // A raycast-only head target allows clean headshots without changing the visual model.
+    const headHit = new THREE.Mesh(new THREE.SphereGeometry(.17, 12, 10), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, colorWrite: false, depthWrite: false }));
+    headHit.position.set(0, 1.66, 0); headHit.userData.head = true; imported.add(headHit); h.parts.push(headHit);
+    h.parts.forEach(p => { p.userData.bot = h; });
+    h.playAnim = name => imported.userData.play && imported.userData.play(name);
+  } else {
+    h = human(palette[Math.random()*palette.length|0]);
+    h.playAnim = () => {};
+  }
+  Object.assign(h, { x: rnd(-22, 22), z: -36, y: 0, hp: 100, cd: 1.5 + Math.random() * 1.2, ph: Math.random() * 6, w: 0, dead: false, t: 0, anim: '' });
   h.parts.forEach(p => p.userData.bot = h); h.g.position.set(h.x, 0, h.z); S.add(h.g); h.g.updateMatrixWorld(true); bots.push(h);
 }
 
@@ -380,7 +474,7 @@ function shoot() {
     if (u.bot) {
       const b = u.bot; b.hp -= w.dmg * (u.head ? 4 : 1); burst(h.point, 0xaa0000, 6);
       $('cross').classList.add('hit'); setTimeout(() => $('cross').classList.remove('hit'), 120);
-      if (b.hp <= 0) { feed('You killed a Terrorist' + (u.head ? ' (headshot)' : '')); b.dead = true; bots = bots.filter(x => x !== b); corpses.push(b); }
+      if (b.hp <= 0) { feed('You killed a Terrorist' + (u.head ? ' (headshot)' : '')); b.dead = true; if (b.playAnim) b.playAnim('Death'); bots = bots.filter(x => x !== b); corpses.push(b); }
     } else { decal(h.point, h.face.normal.clone().transformDirection(h.object.matrixWorld)); burst(h.point, 0x9a9488, 4); }
   }
   P.pitch += w.rec * (0.25 + Math.random() * 0.25); P.yaw += (Math.random() - 0.5) * w.rec * 0.25;
@@ -449,7 +543,7 @@ function update(dt) {
   // spawning and bots
   spawnT -= dt; if (queue > 0 && spawnT <= 0) { spawnBot(); queue--; spawnT = 2.2; }
   for (const b of bots) {
-    b.ph += dt; let t = null, best = 1e9;
+    b.ph += dt; if (b.g.userData.mixer) b.g.userData.mixer.update(dt); let t = null, best = 1e9;
     const dp = Math.hypot(P.x - b.x, P.z - b.z);
     if (dp < 24 && los(b, P)) { t = P; best = dp; }
     else for (const h of hostages) if (h.alive) { const d = Math.hypot(h.x - b.x, h.z - b.z); if (d < best) { best = d; t = h; } }
@@ -461,15 +555,16 @@ function update(dt) {
     if (mvg) { b.x += dx / dd * 3.4 * dt; b.z += dz / dd * 3.4 * dt; b.w += dt * 8; }
     else { b.x += -(t.z - b.z) / td * Math.sin(b.ph * 1.3) * 1.8 * dt; b.z += (t.x - b.x) / td * Math.sin(b.ph * 1.3) * 1.8 * dt; }
     push(b, 0.45); b.g.position.set(b.x, 0, b.z); b.g.rotation.y = Math.atan2(t.x - b.x, t.z - b.z);
-    b.legL.rotation.x = Math.sin(b.w) * 0.7 * (mvg ? 1 : 0); b.legR.rotation.x = -b.legL.rotation.x;
+    if (b.legL && b.legR) { b.legL.rotation.x = Math.sin(b.w) * 0.7 * (mvg ? 1 : 0); b.legR.rotation.x = -b.legL.rotation.x; }
+    if (b.imported && b.playAnim) { b.animLock = Math.max(0, (b.animLock || 0) - dt); const wantAnim = mvg ? 'Walk' : 'Idle'; if (b.animLock <= 0 && b.anim !== wantAnim) { b.playAnim(wantAnim); b.anim = wantAnim; } }
     b.cd -= dt;
     if (b.cd <= 0 && td < 30 && seen) {
-      b.cd = 0.85 + Math.random() * 0.9; gunSnd(WP[1], panTo(b.x, b.z), Math.max(0.12, 0.6 - td * 0.02));
+      b.cd = 0.85 + Math.random() * 0.9; if (b.imported && b.playAnim) { b.playAnim('Fire'); b.anim = 'Fire'; b.animLock = 0.42; } gunSnd(WP[1], panTo(b.x, b.z), Math.max(0.12, 0.6 - td * 0.02));
       if (t === P) { if (Math.random() < Math.max(0.06, 0.34 - td / 75)) hurt(8 + Math.random() * 6); }
       else if (Math.random() < 0.6) { t.hp -= 12; if (t.hp <= 0) { t.alive = false; t.g.rotation.x = Math.PI / 2; t.g.position.y = 0.2; feed('Terrorist killed a Hostage'); } }
     }
   }
-  corpses = corpses.filter(b => { b.t += dt; b.g.rotation.x = -Math.min(1, b.t * 3) * Math.PI / 2; b.g.position.y = Math.min(1, b.t * 3) * 0.15; if (b.t > 5) { S.remove(b.g); return false; } return true; });
+  corpses = corpses.filter(b => { b.t += dt; if (b.g.userData.mixer) b.g.userData.mixer.update(dt); if (!b.imported) { b.g.rotation.x = -Math.min(1, b.t * 3) * Math.PI / 2; b.g.position.y = Math.min(1, b.t * 3) * 0.15; } if (b.t > 5) { S.remove(b.g); return false; } return true; });
   hostages.forEach(h => { if (h.alive) h.g.rotation.y = Math.PI + Math.sin(time * 0.8 + h.i) * 0.3; });
   for (let i = fx.length - 1; i >= 0; i--) { const f = fx[i]; f.v.y -= 9 * dt; f.m.position.addScaledVector(f.v, dt); if ((f.l -= dt) <= 0) { S.remove(f.m); fx.splice(i, 1); } }
 
