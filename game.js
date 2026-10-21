@@ -289,6 +289,29 @@ function tryLoadSoldier(i) {
 }
 if (THREE.GLTFLoader && THREE.SkeletonUtils) tryLoadSoldier(0);
 else { const el = document.getElementById('load'); if (el) el.style.display = 'none'; }
+// Simple world-space rifle for bots (imported soldiers have no weapon).
+function makeBotRifle() {
+  const g = new THREE.Group();
+  const dark = new THREE.MeshStandardMaterial({ color: 0x1a1c1a, roughness: 0.55, metalness: 0.35 });
+  const steel = new THREE.MeshStandardMaterial({ color: 0x5a5e62, roughness: 0.28, metalness: 0.85 });
+  const poly = new THREE.MeshStandardMaterial({ color: 0x2a2d28, roughness: 0.72, metalness: 0.12 });
+  function box(w, h, d, mat, x, y, z) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z); m.castShadow = true; g.add(m); return m;
+  }
+  function cyl(r, len, mat, x, y, z) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 10), mat);
+    m.rotation.x = Math.PI / 2; m.position.set(x, y, z); m.castShadow = true; g.add(m); return m;
+  }
+  box(0.07, 0.09, 0.28, poly, 0, 0.02, -0.02);
+  box(0.06, 0.07, 0.18, steel, 0, 0.02, -0.22);
+  cyl(0.014, 0.42, steel, 0, 0.02, -0.48);
+  box(0.05, 0.11, 0.12, poly, 0, -0.06, 0.08);
+  box(0.045, 0.12, 0.06, dark, 0, -0.08, -0.12);
+  box(0.05, 0.04, 0.08, dark, 0, 0.08, -0.08);
+  box(0.035, 0.035, 0.06, dark, 0, 0.09, -0.35);
+  return g;
+}
 function cloneImportedSoldier() {
   if (!soldierAsset) return null;
   const root = new THREE.Group();
@@ -303,11 +326,16 @@ function cloneImportedSoldier() {
   const play = name => {
     const key = Object.keys(actions).find(k => k === name.toLowerCase() || k.includes(name.toLowerCase()));
     if (!key || root.userData.currentAnim === key) return;
-    const next = actions[key]; next.reset().play();
-    if (root.userData.currentAction) root.userData.currentAction.crossFadeTo(next, 0.18, false);
+    const next = actions[key]; next.reset().fadeIn(0.12).play();
+    if (root.userData.currentAction) root.userData.currentAction.fadeOut(0.12);
     root.userData.currentAction = next; root.userData.currentAnim = key;
   };
   root.userData.mixer = mixer; root.userData.play = play; root.userData.model = model;
+  // Rifle points along +Z (same direction the body faces toward the player).
+  const rifle = makeBotRifle();
+  rifle.position.set(0.26, 1.10, 0.22);
+  rifle.rotation.set(-0.25, Math.PI, 0.12); // flip so barrel aims forward (+Z)
+  root.add(rifle);
   play('Idle');
   return root;
 }
@@ -416,10 +444,14 @@ function spawnBot() {
   const imported = cloneImportedSoldier();
   if (imported) {
     h = { g: imported, parts: [], legL: null, legR: null, imported: true };
-    imported.traverse(o => { if (o.isMesh) h.parts.push(o); });
-    // A raycast-only head target allows clean headshots without changing the visual model.
-    const headHit = new THREE.Mesh(new THREE.SphereGeometry(.17, 12, 10), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, colorWrite: false, depthWrite: false }));
-    headHit.position.set(0, 1.66, 0); headHit.userData.head = true; imported.add(headHit); h.parts.push(headHit);
+    // Dedicated invisible hit volumes (SkinnedMesh raycasting is unreliable).
+    const inv = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, colorWrite: false, depthWrite: false });
+    const bodyHit = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.32, 1.25, 10), inv);
+    bodyHit.position.set(0, 0.98, 0);
+    const headHit = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), inv);
+    headHit.position.set(0, 1.72, 0); headHit.userData.head = true;
+    imported.add(bodyHit); imported.add(headHit);
+    h.parts.push(bodyHit, headHit);
     h.parts.forEach(p => { p.userData.bot = h; });
     h.playAnim = name => imported.userData.play && imported.userData.play(name);
   } else {
@@ -427,7 +459,11 @@ function spawnBot() {
     h.playAnim = () => {};
   }
   Object.assign(h, { x: rnd(-22, 22), z: -36, y: 0, hp: 100, cd: 1.5 + Math.random() * 1.2, ph: Math.random() * 6, w: 0, dead: false, t: 0, anim: '' });
-  h.parts.forEach(p => p.userData.bot = h); h.g.position.set(h.x, 0, h.z); S.add(h.g); h.g.updateMatrixWorld(true); bots.push(h);
+  h.parts.forEach(p => p.userData.bot = h);
+  h.g.position.set(h.x, 0, h.z);
+  const face0 = Math.atan2(0 - h.x, 30 - h.z);
+  h.g.rotation.y = h.imported ? face0 : face0 + Math.PI;
+  S.add(h.g); h.g.updateMatrixWorld(true); bots.push(h);
 }
 
 // ---------- Effects ----------
@@ -497,7 +533,9 @@ function shoot() {
   P.semi = false; w.ammo--; P.cd = w.rof; P.kick = 0.1;
   const sp = w.spr * (P.zoom || P.w !== 2 ? 1 : 8) * (P.y > 0.01 ? 2.5 : 1) * (1 + Math.hypot(mv.x, mv.y) * 0.8);
   ray.setFromCamera({ x: (Math.random() - 0.5) * sp * 6, y: (Math.random() - 0.5) * sp * 6 }, cam);
-  const hits = ray.intersectObjects(wallMeshes.concat(...bots.map(b => b.parts)), false);
+  const hitTargets = wallMeshes.slice();
+  for (const b of bots) if (!b.dead && b.parts) hitTargets.push(...b.parts);
+  const hits = ray.intersectObjects(hitTargets, false);
   if (hits.length) {
     const h = hits[0], u = h.object.userData;
     if (u.bot) {
@@ -583,7 +621,11 @@ function update(dt) {
     const dx = wx - b.x, dz = wz - b.z, dd = Math.hypot(dx, dz) || 1, mvg = !(seen && td < 10);
     if (mvg) { b.x += dx / dd * 3.4 * dt; b.z += dz / dd * 3.4 * dt; b.w += dt * 8; }
     else { b.x += -(t.z - b.z) / td * Math.sin(b.ph * 1.3) * 1.8 * dt; b.z += (t.x - b.x) / td * Math.sin(b.ph * 1.3) * 1.8 * dt; }
-    push(b, 0.45); b.g.position.set(b.x, 0, b.z); b.g.rotation.y = Math.atan2(t.x - b.x, t.z - b.z);
+    push(b, 0.45); b.g.position.set(b.x, 0, b.z);
+    // Procedural humans face local -Z; Soldier.glb faces local +Z.
+    const face = Math.atan2(t.x - b.x, t.z - b.z);
+    b.g.rotation.y = b.imported ? face : face + Math.PI;
+    b.g.updateMatrixWorld(true);
     if (b.legL && b.legR) { b.legL.rotation.x = Math.sin(b.w) * 0.7 * (mvg ? 1 : 0); b.legR.rotation.x = -b.legL.rotation.x; }
     if (b.imported && b.playAnim) { b.animLock = Math.max(0, (b.animLock || 0) - dt); const wantAnim = mvg ? 'Walk' : 'Idle'; if (b.animLock <= 0 && b.anim !== wantAnim) { b.playAnim(wantAnim); b.anim = wantAnim; } }
     b.cd -= dt;
