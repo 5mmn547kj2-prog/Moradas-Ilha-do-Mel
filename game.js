@@ -1,74 +1,84 @@
-// CT Assault - CS 1.6 inspired FPS for mobile browsers. Needs three.js r128 (loaded in index.html).
+// CT Assault — Pro Assets. Official Three.js Soldier.glb (rigged + textured) + enhanced PBR environment.
 const $ = id => document.getElementById(id);
 const rnd = (a, b) => a + Math.random() * (b - a);
 const R = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true, powerPreference: 'high-performance' });
-R.setPixelRatio(Math.min(devicePixelRatio, 2.25));
+R.setPixelRatio(Math.min(devicePixelRatio, 2.5));
 R.outputEncoding = THREE.sRGBEncoding;
 R.toneMapping = THREE.ACESFilmicToneMapping;
-R.toneMappingExposure = 1.0; R.physicallyCorrectLights = true;
+R.toneMappingExposure = 1.18;
+R.physicallyCorrectLights = true;
 R.shadowMap.enabled = true;
 R.shadowMap.type = THREE.PCFSoftShadowMap;
 const S = new THREE.Scene();
-S.background = new THREE.Color(0x59636b);
-S.fog = new THREE.Fog(0x59636b, 42, 145);
-const cam = new THREE.PerspectiveCamera(75, 1, 0.05, 100);
+S.background = new THREE.Color(0x4a5560);
+S.fog = new THREE.FogExp2(0x4a5560, 0.0082);
+const cam = new THREE.PerspectiveCamera(75, 1, 0.05, 160);
 cam.rotation.order = 'YXZ'; S.add(cam);
 function resize() { R.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
-S.add(new THREE.HemisphereLight(0xdde8f1, 0x343a32, 1.25));
-const sun = new THREE.DirectionalLight(0xffe8cf, 2.1);
-sun.position.set(-18, 28, -10);
+S.add(new THREE.HemisphereLight(0xe8f0f8, 0x2a3028, 0.95));
+const sun = new THREE.DirectionalLight(0xfff0dd, 2.45);
+sun.position.set(-22, 32, -12);
 sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
-sun.shadow.camera.left = -36; sun.shadow.camera.right = 36;
-sun.shadow.camera.top = 44; sun.shadow.camera.bottom = -44;
-sun.shadow.bias = -0.0005;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -42; sun.shadow.camera.right = 42;
+sun.shadow.camera.top = 48; sun.shadow.camera.bottom = -48;
+sun.shadow.bias = -0.00035;
+sun.shadow.normalBias = 0.02;
 S.add(sun);
-[[0, 6, -14], [0, 6, 10], [0, 6, 33]].forEach(p => { const l = new THREE.PointLight(0xfff0cc, 0.55, 45); l.position.set(...p); S.add(l); });
+[[0, 5.5, -14], [0, 5.5, 10], [0, 5.5, 33], [-12, 4, 8], [12, 4, 8]].forEach(p => {
+  const l = new THREE.PointLight(0xfff2d8, 0.48, 38); l.position.set(...p); S.add(l);
+});
 
 // ---------- Procedural textures (90s-style pixel look) ----------
-function tex(f) {
-  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); f(x);
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = Math.min(8, R.capabilities.getMaxAnisotropy()); return t;
+function tex(f, size=256) {
+  const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'); f(x, size);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = Math.min(16, R.capabilities.getMaxAnisotropy()); t.encoding = THREE.sRGBEncoding; return t;
 }
-function grain(x, n, a) { for (let i = 0; i < n; i++) { x.fillStyle = Math.random() < 0.5 ? `rgba(0,0,0,${a})` : `rgba(255,255,255,${a})`; x.fillRect(rnd(0, 128) | 0, rnd(0, 128) | 0, 2, 2); } }
+function grain(x, n, a, size=256) { for (let i = 0; i < n; i++) { x.fillStyle = Math.random() < 0.5 ? `rgba(0,0,0,${a})` : `rgba(255,255,255,${a})`; x.fillRect(rnd(0, size) | 0, rnd(0, size) | 0, 1 + (Math.random()*2|0), 1 + (Math.random()*2|0)); } }
 function cont(col) {
-  return tex(x => {
-    x.fillStyle = col; x.fillRect(0, 0, 128, 128);
-    for (let i = 0; i < 16; i++) { x.fillStyle = i % 2 ? 'rgba(0,0,0,.28)' : 'rgba(255,255,255,.1)'; x.fillRect(i * 8, 0, 4, 128); }
-    for (let i = 0; i < 7; i++) { x.fillStyle = 'rgba(70,35,10,.25)'; x.fillRect(rnd(0, 128), rnd(0, 60), rnd(2, 6), rnd(30, 70)); }
-    x.fillStyle = 'rgba(0,0,0,.4)'; x.fillRect(0, 0, 128, 4); x.fillRect(0, 124, 128, 4); grain(x, 1200, 0.15);
-  });
+  return tex((x, s) => {
+    x.fillStyle = col; x.fillRect(0, 0, s, s);
+    for (let i = 0; i < 16; i++) { x.fillStyle = i % 2 ? 'rgba(0,0,0,.28)' : 'rgba(255,255,255,.1)'; x.fillRect(i * (s/16), 0, s/32, s); }
+    for (let i = 0; i < 10; i++) { x.fillStyle = 'rgba(70,35,10,.22)'; x.fillRect(rnd(0, s), rnd(0, s*0.5), rnd(3, 8), rnd(40, 90)); }
+    x.fillStyle = 'rgba(0,0,0,.4)'; x.fillRect(0, 0, s, 5); x.fillRect(0, s-5, s, 5); grain(x, 2800, 0.12, s);
+  }, 256);
 }
 const TX = {
-  concrete: tex(x => {
-    x.fillStyle = '#8c8e8a'; x.fillRect(0, 0, 128, 128); grain(x, 1800, 0.12);
-    x.fillStyle = 'rgba(0,0,0,.25)'; x.fillRect(0, 0, 128, 2); x.fillRect(0, 0, 2, 128); x.fillRect(0, 64, 128, 1);
-    for (let i = 0; i < 6; i++) { x.fillStyle = 'rgba(40,35,25,.12)'; x.fillRect(rnd(0, 128), rnd(0, 40), rnd(3, 9), rnd(30, 80)); }
-  }),
-  brick: tex(x => {
-    x.fillStyle = '#6d665e'; x.fillRect(0, 0, 128, 128);
-    for (let r = 0; r < 8; r++) for (let c = -1; c < 4; c++) { x.fillStyle = `hsl(${rnd(10, 22)},${rnd(35, 50)}%,${rnd(30, 40)}%)`; x.fillRect(c * 32 + (r % 2 ? 16 : 0) + 1, r * 16 + 1, 30, 14); }
-    grain(x, 1200, 0.15);
-  }),
-  crate: tex(x => {
-    x.fillStyle = '#a47c42'; x.fillRect(0, 0, 128, 128);
-    for (let i = 0; i < 8; i++) { x.fillStyle = `rgba(60,35,10,${rnd(0.1, 0.25)})`; x.fillRect(0, i * 16, 128, 2); }
-    x.strokeStyle = '#5e4120'; x.lineWidth = 8; x.strokeRect(4, 4, 120, 120); x.lineWidth = 6; x.beginPath();
-    x.moveTo(8, 8); x.lineTo(120, 120); x.moveTo(120, 8); x.lineTo(8, 120); x.stroke(); grain(x, 1500, 0.14);
-  }),
+  concrete: tex((x,s) => {
+    x.fillStyle = '#8a8c88'; x.fillRect(0, 0, s, s); grain(x, 4200, 0.11, s);
+    x.fillStyle = 'rgba(0,0,0,.22)'; x.fillRect(0, 0, s, 3); x.fillRect(0, 0, 3, s); x.fillRect(0, s/2, s, 2);
+    for (let i = 0; i < 14; i++) { x.fillStyle = 'rgba(35,32,24,.14)'; x.fillRect(rnd(0, s), rnd(0, s*0.35), rnd(4, 12), rnd(40, 110)); }
+  }, 512),
+  brick: tex((x,s) => {
+    x.fillStyle = '#5c564e'; x.fillRect(0, 0, s, s);
+    const rh = s/8, rw = s/4;
+    for (let r = 0; r < 8; r++) for (let c = -1; c < 5; c++) {
+      x.fillStyle = `hsl(${rnd(8, 20)},${rnd(28, 48)}%,${rnd(28, 42)}%)`;
+      x.fillRect(c * rw + (r % 2 ? rw/2 : 0) + 1, r * rh + 1, rw - 2, rh - 2);
+    }
+    grain(x, 3200, 0.13, s);
+  }, 512),
+  crate: tex((x,s) => {
+    x.fillStyle = '#a07838'; x.fillRect(0, 0, s, s);
+    for (let i = 0; i < 10; i++) { x.fillStyle = `rgba(55,30,8,${rnd(0.08, 0.22)})`; x.fillRect(0, i * (s/10), s, 2); }
+    x.strokeStyle = '#4a3218'; x.lineWidth = Math.max(6, s/16); x.strokeRect(s*0.04, s*0.04, s*0.92, s*0.92);
+    x.lineWidth = Math.max(4, s/24); x.beginPath();
+    x.moveTo(s*0.06, s*0.06); x.lineTo(s*0.94, s*0.94); x.moveTo(s*0.94, s*0.06); x.lineTo(s*0.06, s*0.94); x.stroke();
+    grain(x, 3600, 0.12, s);
+  }, 512),
   contR: cont('#8a3b2b'), contB: cont('#2f566b'),
-  floor: tex(x => {
-    x.fillStyle = '#6a6860'; x.fillRect(0, 0, 128, 128); grain(x, 2200, 0.1);
-    x.fillStyle = 'rgba(0,0,0,.3)'; x.fillRect(0, 0, 128, 2); x.fillRect(0, 0, 2, 128); x.fillRect(0, 64, 128, 1); x.fillRect(64, 0, 1, 128);
-    for (let i = 0; i < 4; i++) { x.fillStyle = 'rgba(30,25,15,.12)'; x.beginPath(); x.arc(rnd(0, 128), rnd(0, 128), rnd(6, 18), 0, 7); x.fill(); }
-  }),
-  ceil: tex(x => { x.fillStyle = '#3a3d40'; x.fillRect(0, 0, 128, 128); x.fillStyle = 'rgba(255,255,255,.08)'; x.fillRect(0, 0, 128, 3); x.fillRect(0, 0, 3, 128); grain(x, 900, 0.1); })
+  floor: tex((x,s) => {
+    x.fillStyle = '#65635c'; x.fillRect(0, 0, s, s); grain(x, 5000, 0.09, s);
+    x.fillStyle = 'rgba(0,0,0,.28)'; x.fillRect(0, 0, s, 3); x.fillRect(0, 0, 3, s); x.fillRect(0, s/2, s, 2); x.fillRect(s/2, 0, 2, s);
+    for (let i = 0; i < 8; i++) { x.fillStyle = 'rgba(25,22,14,.11)'; x.beginPath(); x.arc(rnd(0, s), rnd(0, s), rnd(8, 28), 0, 7); x.fill(); }
+  }, 512),
+  ceil: tex((x,s) => { x.fillStyle = '#36393c'; x.fillRect(0, 0, s, s); x.fillStyle = 'rgba(255,255,255,.07)'; x.fillRect(0, 0, s, 4); x.fillRect(0, 0, 4, s); grain(x, 2200, 0.09, s); }, 256)
 };
 const MT = {};
 for (const k in TX) {
   MT[k] = new THREE.MeshStandardMaterial({
-    map: TX[k], roughness: 0.88, metalness: k.startsWith('cont') ? 0.18 : 0.04
+    map: TX[k], roughness: k === 'crate' ? 0.78 : 0.86, metalness: k.startsWith('cont') ? 0.22 : 0.03
   });
 }
 
@@ -233,13 +243,22 @@ function mkGun(i) {
 const guns = [0, 1, 2].map(mkGun);
 const flash = new THREE.PointLight(0xffcc66, 0, 8); flash.position.set(0.2, -0.1, -1); cam.add(flash);
 
-// ---------- Imported character asset ----------
-// Rigged, textured soldier GLB with Idle/Walk/Run/Fire/Reload/Death clips.
-// Hosted by the asset author; procedural character remains as a graceful fallback.
+// ---------- Imported character asset (professional) ----------
+// Official Three.js example Soldier.glb — fully textured, rigged, with Idle / Walk / Run clips.
+// Fallback: procedural low-poly tactical character if the CDN is unreachable.
 let soldierAsset = null, soldierClips = [];
-if (THREE.GLTFLoader && THREE.SkeletonUtils) {
-  const soldierLoader = new THREE.GLTFLoader();
-  soldierLoader.load('https://www.shanebrumback.com/models/soldier_rigged.glb', gltf => {
+const SOLDIER_URLS = [
+  'https://threejs.org/examples/models/gltf/Soldier.glb',
+  'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/models/gltf/Soldier.glb'
+];
+function tryLoadSoldier(i) {
+  if (!THREE.GLTFLoader || !THREE.SkeletonUtils || i >= SOLDIER_URLS.length) {
+    console.warn('Rigged soldier unavailable; using procedural fallback.');
+    const el = document.getElementById('load'); if (el) el.style.display = 'none';
+    return;
+  }
+  const loader = new THREE.GLTFLoader();
+  loader.load(SOLDIER_URLS[i], gltf => {
     soldierAsset = gltf.scene;
     soldierClips = gltf.animations || [];
     soldierAsset.traverse(o => {
@@ -247,19 +266,29 @@ if (THREE.GLTFLoader && THREE.SkeletonUtils) {
       o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
       if (o.material) {
         const mats = Array.isArray(o.material) ? o.material : [o.material];
-        mats.forEach(m => { if ('roughness' in m && m.roughness < 0.18) m.roughness = 0.32; });
+        mats.forEach(m => {
+          if (m.map) m.map.encoding = THREE.sRGBEncoding;
+          if ('roughness' in m) m.roughness = Math.max(m.roughness || 0.5, 0.35);
+          if ('metalness' in m) m.metalness = Math.min(m.metalness || 0, 0.25);
+          m.needsUpdate = true;
+        });
       }
     });
-    // Normalize once so the imported model fits the game's ~1.9 m character scale.
     const bb = new THREE.Box3().setFromObject(soldierAsset), size = bb.getSize(new THREE.Vector3());
     const h = Math.max(0.001, size.y);
-    soldierAsset.scale.setScalar(1.88 / h);
+    soldierAsset.scale.setScalar(1.82 / h);
     soldierAsset.updateMatrixWorld(true);
     const bb2 = new THREE.Box3().setFromObject(soldierAsset), center = bb2.getCenter(new THREE.Vector3());
     soldierAsset.position.set(-center.x, -bb2.min.y, -center.z);
-    console.info('Imported rigged soldier loaded:', soldierClips.map(c => c.name).join(', '));
-  }, undefined, err => console.warn('Rigged soldier asset unavailable; using built-in fallback model.', err));
+    console.info('Pro soldier loaded:', soldierClips.map(c => c.name).join(', ') || '(no named clips)');
+    const el = document.getElementById('load'); if (el) el.style.display = 'none';
+  }, undefined, err => {
+    console.warn('Soldier URL failed, trying next…', err);
+    tryLoadSoldier(i + 1);
+  });
 }
+if (THREE.GLTFLoader && THREE.SkeletonUtils) tryLoadSoldier(0);
+else { const el = document.getElementById('load'); if (el) el.style.display = 'none'; }
 function cloneImportedSoldier() {
   if (!soldierAsset) return null;
   const root = new THREE.Group();
