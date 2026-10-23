@@ -581,7 +581,7 @@
             const bc = document.createElement('canvas'); bc.width = 1024; bc.height = 512; const bx = bc.getContext('2d');
             bx.fillStyle = '#808080'; bx.fillRect(0, 0, 1024, 512);
             for (let i = 0; i < 50000; i++) { const v = 90 + Math.random() * 80 | 0; bx.fillStyle = `rgb(${v},${v},${v})`; bx.fillRect(Math.random() * 1024, Math.random() * 512, 1.5, 1.5); }
-            headMesh = new THREE.Mesh(g, new THREE.MeshPhysicalMaterial({ map: skinTex, bumpMap: new THREE.CanvasTexture(bc), bumpScale: 0.6, roughness: 0.62, clearcoat: 0.12, clearcoatRoughness: 0.45, emissive: 0x2a0d08, emissiveIntensity: 0.25 }));
+            headMesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: skinTex, bumpMap: new THREE.CanvasTexture(bc), bumpScale: 0.6, roughness: 0.55, metalness: 0.0, emissive: 0x2a0d08, emissiveIntensity: 0.25 }));
             headGroup.add(headMesh);
 
             // Match skin and hair colour to the reference photo
@@ -615,7 +615,7 @@
             // Extraction-site markers (hidden until used) and recipient-site slits (angled with hair direction)
             exHalo = markerMesh(1, donorUnits.length, 0.5); exPun = markerMesh(1, donorUnits.length, 0.95);
             const Z0 = new THREE.Matrix4().makeScale(0, 0, 0);
-            for (let i = 0; i < donorUnits.length; i++) { exHalo.setMatrixAt(i, Z0); exPun.setMatrixAt(i, Z0); }
+            for (let i = 0; i < donorUnits.length; i++) { exHalo.setMatrixAt(i, Z0); exPun.setMatrixAt(i, Z0); exHalo.setColorAt(i, new THREE.Color(0xc8504f)); exPun.setColorAt(i, new THREE.Color(0xd01a1a)); }
             siteHalo = markerMesh(1, 60, 0.35); siteSlit = markerMesh(1, 60, 0.95);
             recipientPoreMeshes = [];
             for (let i = 0; i < 60; i++) {
