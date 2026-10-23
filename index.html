@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HAIR RECOVERY: High-Fidelity 3D Clinical Simulator</title>
+    <title>HAIR RECOVERY: Anatomical FUE & Implant Simulator</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -383,6 +383,9 @@
         let headGroup, donorGroup, recipientGroup;
         let donorHairMeshes = [];
         let recipientPoreMeshes = [];
+        let harvestedGrafts = [];
+        let scalpMarkMeshes = [];
+        let implantedGraftMeshes = [];
         let raycaster, mouse;
         let container;
 
@@ -437,168 +440,158 @@
             window.addEventListener('resize', onWindowResize);
         }
 
-        // --- SCULPT ANATOMICAL MALE PERSONAL TRAINER 3D HEAD ---
+        // --- HIGHER-FIDELITY PATIENT HEAD + CURVED SCALP FOLLICLES ---
+        // Coordinates: face is local -Z; donor occipital scalp is local +Z.
+        // Follicle roots are sampled on the ellipsoid and their direction follows its surface normal.
         function buildAnatomicalTrainerHead() {
             headGroup = new THREE.Group();
             scene.add(headGroup);
-            // Reference patient faces the default camera; donor scalp is on the rear.
             headGroup.rotation.y = Math.PI;
 
-            // Realistic Skin & Hair Materials
-            const skinMat = new THREE.MeshStandardMaterial({
-                color: 0xc9957e,
-                roughness: 0.78,
-                metalness: 0.0
-            });
-            const hairMat = new THREE.MeshStandardMaterial({
-                color: 0x3d2314,
-                roughness: 0.85
-            });
-            const shirtMat = new THREE.MeshStandardMaterial({
-                color: 0x1e293b,
-                roughness: 0.8
-            });
-            const stubbleMat = new THREE.MeshStandardMaterial({
-                color: 0x2e1a0e,
-                roughness: 0.95
-            });
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xc9957e, roughness: 0.72, metalness: 0 });
+            const skinLight = new THREE.MeshStandardMaterial({ color: 0xd5a18a, roughness: 0.68 });
+            const hairMat = new THREE.MeshStandardMaterial({ color: 0x38251b, roughness: 0.84 });
+            const hairHiMat = new THREE.MeshStandardMaterial({ color: 0x52392b, roughness: 0.78 });
+            const shirtMat = new THREE.MeshStandardMaterial({ color: 0x30343a, roughness: 0.9 });
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x241812, roughness: 0.94 });
+            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xe7ddd4, roughness: 0.42 });
+            const irisMat = new THREE.MeshStandardMaterial({ color: 0x70472b, roughness: 0.35 });
+            const pupilMat = new THREE.MeshBasicMaterial({ color: 0x17120f });
+            const lipMat = new THREE.MeshStandardMaterial({ color: 0x9c6258, roughness: 0.8 });
 
-            // 1. Dark Gray V-Neck Gym Shirt
-            const shirtGeo = new THREE.CylinderGeometry(1.25, 1.65, 1.35, 32);
-            const shirt = new THREE.Mesh(shirtGeo, shirtMat);
-            shirt.position.y = -1.6;
-            headGroup.add(shirt);
-
-            // 2. Neck
-            const neckGeo = new THREE.CylinderGeometry(0.52, 0.62, 0.8, 32);
-            const neck = new THREE.Mesh(neckGeo, skinMat);
-            neck.position.y = -0.85;
-            headGroup.add(neck);
-
-            // 3. Head Cranium Geometry
-            const headGeo = new THREE.SphereGeometry(1.12, 36, 36);
-            headGeo.scale(1.0, 1.24, 1.1);
+            // Torso, neck, and craniofacial volumes.
+            const shirt = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.62, 1.35, 48), shirtMat);
+            shirt.position.y = -1.62; headGroup.add(shirt);
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.58, 0.88, 40), skinMat);
+            neck.position.set(0, -0.88, -0.02); headGroup.add(neck);
+            const headGeo = new THREE.SphereGeometry(1, 72, 56);
+            headGeo.scale(0.91, 1.22, 0.94);
             const cranium = new THREE.Mesh(headGeo, skinMat);
-            cranium.position.y = 0.12;
-            headGroup.add(cranium);
+            cranium.position.set(0, 0.12, 0); cranium.castShadow = true; cranium.receiveShadow = true; headGroup.add(cranium);
 
-            // 4. Jaw & Chin Contours
-            const jawGeo = new THREE.SphereGeometry(0.72, 32, 24);
-            const jaw = new THREE.Mesh(jawGeo, skinMat);
-            jaw.scale.set(0.88, 0.78, 0.82);
-            jaw.position.set(0, -0.42, -0.12);
-            headGroup.add(jaw);
+            // Face is built from overlapping, softly shaded forms rather than primitive boxes.
+            function ellipsoid(name, pos, scale, mat, segments=32) {
+                const m = new THREE.Mesh(new THREE.SphereGeometry(1, segments, Math.max(20, segments-4)), mat);
+                m.name = name; m.position.set(...pos); m.scale.set(...scale); m.castShadow = true; m.receiveShadow = true; headGroup.add(m); return m;
+            }
+            ellipsoid('midface', [0,-0.12,-0.63], [0.70,0.70,0.35], skinMat);
+            ellipsoid('jaw', [0,-0.48,-0.48], [0.68,0.48,0.48], skinMat);
+            ellipsoid('chin', [0,-0.76,-0.60], [0.31,0.18,0.20], skinLight);
+            ellipsoid('nose bridge', [0,-0.02,-0.93], [0.115,0.31,0.16], skinLight);
+            ellipsoid('nose tip', [0,-0.22,-1.00], [0.15,0.105,0.13], skinLight);
+            ellipsoid('left nostril', [-0.09,-0.285,-0.98], [0.045,0.025,0.025], darkMat, 20);
+            ellipsoid('right nostril', [0.09,-0.285,-0.98], [0.045,0.025,0.025], darkMat, 20);
+            // Brows, eye sockets, eyeballs, irises, and pupils.
+            for (const side of [-1,1]) {
+                ellipsoid('cheek', [side*0.43,-0.28,-0.73], [0.27,0.25,0.18], skinLight);
+                ellipsoid('brow', [side*0.30,0.205,-0.82], [0.255,0.075,0.095], darkMat);
+                ellipsoid('eye white', [side*0.30,0.105,-0.855], [0.205,0.105,0.075], whiteMat);
+                ellipsoid('iris', [side*0.30,0.10,-0.923], [0.071,0.071,0.025], irisMat, 24);
+                ellipsoid('pupil', [side*0.30,0.10,-0.945], [0.032,0.043,0.015], pupilMat, 20);
+                ellipsoid('ear', [side*0.91,0.03,-0.015], [0.15,0.245,0.105], skinMat);
+                ellipsoid('ear concha', [side*0.99,0.03,-0.075], [0.065,0.12,0.035], lipMat, 24);
+                // Subtle nasolabial/beard-region shading adds facial definition.
+                ellipsoid('beard shadow', [side*0.29,-0.54,-0.69], [0.29,0.22,0.055], darkMat);
+            }
+            ellipsoid('upper lip', [0,-0.48,-0.86], [0.22,0.045,0.035], lipMat);
+            ellipsoid('lower lip', [0,-0.55,-0.85], [0.19,0.045,0.04], lipMat);
+            ellipsoid('chin stubble', [0,-0.70,-0.79], [0.30,0.12,0.04], darkMat);
 
-            // Photorealistic identity layer from the supplied reference image.
-            // The 3D scalp remains available from the rear donor camera.
+            // Keep the supplied portrait as a subtle, curved identity surface on the front only.
+            // It is deliberately behind the 3D facial features and never used as the scalp itself.
             const patientPhoto = new Image();
             patientPhoto.onload = () => {
-                const photoCanvas = document.createElement('canvas');
-                photoCanvas.width = patientPhoto.naturalWidth;
-                photoCanvas.height = patientPhoto.naturalHeight;
-                const ctx = photoCanvas.getContext('2d');
-                ctx.drawImage(patientPhoto, 0, 0);
-                const photoTexture = new THREE.CanvasTexture(photoCanvas);
-                if (photoTexture.colorSpace !== undefined && THREE.SRGBColorSpace !== undefined) photoTexture.colorSpace = THREE.SRGBColorSpace;
-                const photoMat = new THREE.MeshBasicMaterial({ map: photoTexture, side: THREE.FrontSide });
-                const photoPlane = new THREE.Mesh(new THREE.PlaneGeometry(2.05, 3.57), photoMat);
-                photoPlane.position.set(0, -0.02, -1.29);
-                photoPlane.userData.isPatientPhoto = true;
-                headGroup.add(photoPlane);
+                const c = document.createElement('canvas'); c.width = patientPhoto.naturalWidth; c.height = patientPhoto.naturalHeight;
+                c.getContext('2d').drawImage(patientPhoto, 0, 0);
+                const tex = new THREE.CanvasTexture(c);
+                if (tex.colorSpace !== undefined && THREE.SRGBColorSpace !== undefined) tex.colorSpace = THREE.SRGBColorSpace;
+                const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.10, depthWrite: false, side: THREE.DoubleSide });
+                const identity = new THREE.Mesh(new THREE.PlaneGeometry(1.45, 2.52, 16, 24), mat);
+                identity.position.set(0, -0.02, -0.91); identity.userData.isPatientPhoto = true;
+                // Slightly bow the plane so the reference overlay follows the face's depth.
+                const pos = identity.geometry.attributes.position;
+                for (let i=0; i<pos.count; i++) { const x=pos.getX(i), y=pos.getY(i); pos.setZ(i, -0.055*(1-(x/0.73)**2) + 0.018*y*y); }
+                identity.geometry.computeVertexNormals(); headGroup.add(identity);
             };
             patientPhoto.src = PATIENT_PHOTO_DATA;
 
-            // 5. Defined Nose
-            const noseGeo = new THREE.ConeGeometry(0.18, 0.45, 16);
-            noseGeo.rotateX(-Math.PI / 6);
-            const nose = new THREE.Mesh(noseGeo, skinMat);
-            nose.position.set(0, 0.12, -1.18);
-            headGroup.add(nose);
+            // A scalp shell, shaped like the cranium, gives extraction dots and recipient sites a real surface.
+            const scalpGeo = new THREE.SphereGeometry(1, 72, 56); scalpGeo.scale(0.925, 1.235, 0.955);
+            const scalpMat = new THREE.MeshStandardMaterial({ color: 0x9f7664, roughness: 0.9, side: THREE.DoubleSide });
+            const scalp = new THREE.Mesh(scalpGeo, scalpMat); scalp.position.set(0,0.12,0); scalp.name='scalp shell'; headGroup.add(scalp);
+            // Hairline/top hair mass, tapered back toward the crown; individual strands remain selectable.
+            const hairCapGeo = new THREE.SphereGeometry(1, 64, 40, 0, Math.PI*2, 0, Math.PI*0.48);
+            hairCapGeo.scale(0.95, 1.25, 0.98);
+            const hairCap = new THREE.Mesh(hairCapGeo, new THREE.MeshStandardMaterial({ color:0x39281e, roughness:0.92, side:THREE.DoubleSide }));
+            hairCap.position.set(0,0.14,0); headGroup.add(hairCap);
 
-            // 6. Brown Eyes
-            const eyeGeo = new THREE.SphereGeometry(0.09, 16, 16);
-            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x3d2314 });
-            
-            const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-            leftEye.position.set(-0.32, 0.28, -1.08);
-            headGroup.add(leftEye);
+            donorHairMeshes = []; recipientPoreMeshes = []; harvestedGrafts = []; scalpMarkMeshes = []; implantedGraftMeshes = [];
+            donorGroup = new THREE.Group(); headGroup.add(donorGroup);
+            recipientGroup = new THREE.Group(); headGroup.add(recipientGroup);
 
-            const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-            rightEye.position.set(0.32, 0.28, -1.08);
-            headGroup.add(rightEye);
-
-            // 7. Ears
-            const earGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.38, 16);
-            earGeo.rotateZ(Math.PI / 2);
-            
-            const leftEar = new THREE.Mesh(earGeo, skinMat);
-            leftEar.position.set(-1.12, 0.12, -0.05);
-            headGroup.add(leftEar);
-
-            const rightEar = new THREE.Mesh(earGeo, skinMat);
-            rightEar.position.set(1.12, 0.12, -0.05);
-            headGroup.add(rightEar);
-
-            // 8. Stubble / Facial Beard Shader Box
-            const beardGeo = new THREE.SphereGeometry(1.14, 32, 16, 0, Math.PI * 2, Math.PI * 0.4, Math.PI * 0.55);
-            const beard = new THREE.Mesh(beardGeo, stubbleMat);
-            beard.position.y = -0.12;
-            headGroup.add(beard);
-
-            // --- DONOR ZONE: BACK & SIDES (THICK 3D HAIR SHAFTS) ---
-            donorHairMeshes = [];
-            donorGroup = new THREE.Group();
-            headGroup.add(donorGroup);
-
-            for (let i = 0; i < 240; i++) {
-                const phi = Math.acos(-1 + (2 * i) / 240);
-                const theta = Math.sqrt(240 * Math.PI) * phi;
-
-                const radius = 1.15;
-                const x = radius * Math.sin(phi) * Math.cos(theta);
-                const y = radius * Math.cos(phi) + 0.12;
-                const z = radius * Math.sin(phi) * Math.sin(theta);
-
-                // Filter for back and side donor scalp areas (z > 0.1)
-                if (z > 0.12 && y > -0.2) {
-                    // Hair Shaft Geometry
-                    const hairShaftGeo = new THREE.CylinderGeometry(0.006, 0.012, 0.16, 5);
-                    hairShaftGeo.translate(0, 0.08, 0); // Origin at root base
-                    const hairShaft = new THREE.Mesh(hairShaftGeo, hairMat);
-
-                    hairShaft.position.set(x, y, z);
-                    const normal = new THREE.Vector3(x, y - 0.12, z).normalize();
-                    hairShaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
-
-                    hairShaft.userData = { type: 'donor', id: donorHairMeshes.length, extracted: false, pos: new THREE.Vector3(x,y,z), norm: normal };
-
-                    donorGroup.add(hairShaft);
-                    donorHairMeshes.push(hairShaft);
-                }
+            // Ellipsoid surface point and outward normal. All follicles align to local scalp curvature.
+            function scalpSurface(x, y, zSign) {
+                const yy = (y-0.12)/1.235;
+                const xx = x/0.925;
+                const rem = Math.max(0.025, 1-xx*xx-yy*yy);
+                const z = zSign * 0.955 * Math.sqrt(rem);
+                const pos = new THREE.Vector3(x,y,z);
+                const normal = new THREE.Vector3(x/(0.925*0.925), (y-0.12)/(1.235*1.235), z/(0.955*0.955)).normalize();
+                return {pos, normal};
+            }
+            function makeFollicle(root, normal, length, material, radius=0.009) {
+                const group = new THREE.Group();
+                // Shaft leans tangentially with a small, natural variation in direction.
+                const tangent = new THREE.Vector3(normal.x*0.28 + (Math.random()-0.5)*0.16, 0.12 + Math.random()*0.10, normal.z*0.22).normalize();
+                const shaftGeo = new THREE.CylinderGeometry(radius*0.55, radius, length, 7);
+                shaftGeo.translate(0, length*0.48, 0);
+                const shaft = new THREE.Mesh(shaftGeo, material); shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), tangent); group.add(shaft);
+                const bulb = new THREE.Mesh(new THREE.SphereGeometry(radius*1.25, 10, 8), new THREE.MeshStandardMaterial({color:0x4c3023, roughness:0.95}));
+                bulb.position.copy(tangent).multiplyScalar(-0.012); group.add(bulb);
+                group.position.copy(root); group.userData.growth=tangent.clone(); return group;
             }
 
-            // --- RECIPIENT ZONE: FRONT RECEDING M-SHAPE BALD TEMPLES ---
-            recipientPoreMeshes = [];
-            recipientGroup = new THREE.Group();
-            headGroup.add(recipientGroup);
-
-            // 60 recipient sites arranged in a naturally irregular, M-shaped hairline.
-            // These overlay the forehead of the supplied reference photograph.
-            for (let i = 0; i < 60; i++) {
-                const t = i / 59;
-                const x = -0.72 + t * 1.44;
-                const edge = Math.abs(x) / 0.72;
-                const y = 1.00 - 0.23 * Math.pow(edge, 1.7) + 0.025 * Math.sin(i * 2.31) + 0.012 * Math.sin(i * 5.7);
-                const z = -1.305;
-                const poreGeo = new THREE.CircleGeometry(0.018, 12);
-                const poreMat = new THREE.MeshBasicMaterial({ color: 0xe11d48, side: THREE.DoubleSide, depthTest: false });
-                const pore = new THREE.Mesh(poreGeo, poreMat);
-                pore.position.set(x, y, z);
-                pore.renderOrder = 5;
-                pore.userData = { type: 'recipient', id: recipientPoreMeshes.length, implanted: false, pos: new THREE.Vector3(x,y,z), norm: new THREE.Vector3(0,0,-1) };
-                recipientGroup.add(pore);
-                recipientPoreMeshes.push(pore);
+            // FUE donor zone: posterior and posterolateral horseshoe, with naturally varied spacing.
+            let seed = 71821; const rand = () => { seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; };
+            for (let i=0; i<520; i++) {
+                const theta = (i/520)*Math.PI*2;
+                const y = -0.38 + rand()*1.05;
+                const x = 0.82*Math.sin(theta) * Math.sqrt(Math.max(0.15,1-((y-0.12)/1.235)**2));
+                const zSign = Math.cos(theta) >= 0 ? 1 : -1;
+                // Keep donor harvesting on the back and side, not the frontal face.
+                if (zSign < 0 && Math.abs(theta) < 0.85) continue;
+                const surf = scalpSurface(x, y, zSign);
+                const root = surf.pos.clone().addScaledVector(surf.normal, 0.012);
+                const strand = makeFollicle(root, surf.normal, 0.105 + rand()*0.085, rand()<0.18 ? hairHiMat : hairMat, 0.006 + rand()*0.003);
+                strand.userData = {type:'donor', id:donorHairMeshes.length, extracted:false, pos:root.clone(), norm:surf.normal.clone(), growth:strand.userData.growth.clone()};
+                donorGroup.add(strand); donorHairMeshes.push(strand);
             }
+
+            // Recipient region: 60 individually oriented sites following the actual curved frontal scalp.
+            // Slightly irregular M-shaped recession with a denser central forelock transition.
+            for (let i=0; i<60; i++) {
+                const t = i/59; const x = -0.68 + t*1.36;
+                const edge = Math.abs(x)/0.68;
+                const y = 0.82 - 0.22*Math.pow(edge,1.65) + (rand()-0.5)*0.035 + 0.012*Math.sin(i*2.4);
+                const surf = scalpSurface(x, y, -1);
+                const pos = surf.pos.clone().addScaledVector(surf.normal, 0.014);
+                const poreGeo = new THREE.RingGeometry(0.010, 0.020, 12);
+                const poreMat = new THREE.MeshBasicMaterial({color:0xc46b61, side:THREE.DoubleSide, depthTest:true});
+                const pore = new THREE.Mesh(poreGeo, poreMat); pore.position.copy(pos);
+                pore.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), surf.normal.clone().negate());
+                pore.userData = {type:'recipient', id:recipientPoreMeshes.length, implanted:false, pos:pos.clone(), norm:surf.normal.clone().negate(), growth:new THREE.Vector3(-x*0.22,0.18,-1).normalize()};
+                recipientGroup.add(pore); recipientPoreMeshes.push(pore);
+            }
+        }
+
+        function makeTransferGraft(growthDirection) {
+            const graft = new THREE.Group();
+            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.009, 0.13, 7), new THREE.MeshStandardMaterial({color:0x3b281d, roughness:0.86}));
+            shaft.position.y = 0.055; graft.add(shaft);
+            const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.012, 10, 8), new THREE.MeshStandardMaterial({color:0x5b3b2b, roughness:0.95}));
+            bulb.position.set(0,-0.008,0); graft.add(bulb);
+            graft.userData.growth = growthDirection.clone();
+            return graft;
         }
 
         // --- CONTROLS & SURGICAL INTERACTION ---
@@ -632,18 +625,21 @@
                     } else if (state.currentTool === 'harvest') {
                         const intersects = raycaster.intersectObjects(donorHairMeshes);
                         if (intersects.length > 0) {
-                            const hit = intersects[0].object;
-                            if (!hit.userData.extracted) {
+                            let hit = intersects[0].object;
+                            while (hit && !hit.userData.type) hit = hit.parent;
+                            if (hit && !hit.userData.extracted) {
                                 hit.userData.extracted = true;
-                                hit.visible = false; // Extract hair shaft
-
-                                // Leave micro-punch red extraction dot on scalp surface
-                                const markGeo = new THREE.CircleGeometry(0.02, 8);
-                                const markMat = new THREE.MeshBasicMaterial({ color: 0x991b1b, side: THREE.DoubleSide });
+                                hit.visible = false;
+                                // Store a real follicular unit (shaft + bulb) for transfer to the recipient zone.
+                                const graft = makeTransferGraft(hit.userData.growth || new THREE.Vector3(0,0.2,1));
+                                harvestedGrafts.push(graft);
+                                // Tiny circular FUE punch mark conforming to the curved donor scalp.
+                                const markGeo = new THREE.CircleGeometry(0.012, 12);
+                                const markMat = new THREE.MeshStandardMaterial({ color: 0x875b50, roughness:0.95, side: THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-2 });
                                 const mark = new THREE.Mesh(markGeo, markMat);
-                                mark.position.copy(hit.userData.pos);
-                                mark.quaternion.copy(hit.quaternion);
-                                headGroup.add(mark);
+                                mark.position.copy(hit.userData.pos).addScaledVector(hit.userData.norm, 0.002);
+                                mark.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), hit.userData.norm);
+                                mark.userData.isExtractionMark = true; headGroup.add(mark); scalpMarkMeshes.push(mark);
 
                                 state.harvestedVault++;
                                 state.cash += 25;
@@ -667,16 +663,22 @@
                                 hit.userData.implanted = true;
                                 hit.material.color.set(0x10b981); // Turn green when planted
 
-                                // Plant 3D Hair Shaft into recipient scalp
-                                const hairMat = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.85 });
-                                const implantedShaftGeo = new THREE.CylinderGeometry(0.006, 0.012, 0.16, 5);
-                                implantedShaftGeo.translate(0, 0.08, 0);
-                                const implantedShaft = new THREE.Mesh(implantedShaftGeo, hairMat);
-
-                                implantedShaft.position.copy(hit.userData.pos);
-                                const growthDirection = hit.userData.norm.clone().add(new THREE.Vector3(0, 0.12, 0.22)).normalize();
-                                implantedShaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), growthDirection);
-                                headGroup.add(implantedShaft);
+                                // Transfer the harvested follicular unit and orient it to the local scalp tangent.
+                                const graft = harvestedGrafts.pop();
+                                if (graft) {
+                                    graft.position.copy(hit.userData.pos).addScaledVector(hit.userData.norm, -0.006);
+                                    const targetGrowth = hit.userData.growth.clone().normalize();
+                                    graft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), targetGrowth);
+                                    graft.userData.isImplantedGraft = true;
+                                    headGroup.add(graft); implantedGraftMeshes.push(graft);
+                                }
+                                hit.material.color.set(0x4f9b75);
+                                // Add a tiny, healed-looking recipient punctum around the graft entry.
+                                const entryGeo = new THREE.CircleGeometry(0.009, 10);
+                                const entry = new THREE.Mesh(entryGeo, new THREE.MeshBasicMaterial({color:0x9d625a, side:THREE.DoubleSide}));
+                                entry.position.copy(hit.userData.pos).addScaledVector(hit.userData.norm, 0.001);
+                                entry.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), hit.userData.norm);
+                                headGroup.add(entry); scalpMarkMeshes.push(entry);
 
                                 state.harvestedVault--;
                                 audio.playPunch(true);
@@ -692,7 +694,7 @@
             // Preset Camera Buttons
             document.getElementById('cam-face-btn').addEventListener('click', () => setCameraPreset(0, 0.3, 4.8));
             document.getElementById('cam-front-btn').addEventListener('click', () => setCameraPreset(0, 3.2, 2.5));
-            document.getElementById('cam-back-btn').addEventListener('click', () => setCameraPreset(0, 0.35, -4.8));
+            document.getElementById('cam-back-btn').addEventListener('click', () => setCameraPreset(0, 0.25, -4.6));
 
             // Tool Buttons
             document.querySelectorAll('.tool-btn').forEach(btn => {
