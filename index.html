@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HAIR RECOVERY: 3D Pro Surgeon Simulator</title>
+    <title>HAIR RECOVERY: High-Fidelity 3D Clinical Simulator</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -60,18 +60,18 @@
             position: relative;
             background: #ffffff;
             color: #0f172a;
-            border-radius: 1rem;
-            padding: 6px 12px;
+            border-radius: 0.75rem;
+            padding: 5px 10px;
             font-weight: 800;
             font-size: 11px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.5);
         }
         .speech-bubble:after {
             content: '';
             position: absolute;
-            bottom: -8px;
-            left: 20px;
-            border-width: 8px 8px 0;
+            bottom: -6px;
+            left: 18px;
+            border-width: 6px 6px 0;
             border-style: solid;
             border-color: #ffffff transparent;
             display: block;
@@ -99,7 +99,7 @@
         <!-- Timer -->
         <div class="bg-sky-500/20 text-sky-300 px-3 py-1 rounded-xl border border-sky-500/30 flex items-center gap-1.5 font-bold text-xs">
             <i class="fa-solid fa-stopwatch text-sky-400"></i>
-            <span id="timer-display" class="font-teko text-lg leading-none">03:30</span>
+            <span id="timer-display" class="font-teko text-lg leading-none">04:00</span>
         </div>
     </header>
 
@@ -115,13 +115,13 @@
             <div class="flex-grow min-w-0">
                 <div class="flex justify-between items-center">
                     <h3 class="font-black text-xs text-amber-400 truncate">Coach Alex (Trainer)</h3>
-                    <span class="text-[9px] font-extrabold bg-teal-950 text-teal-300 px-2 py-0.5 rounded-full border border-teal-500/30" id="step-status">3D Interactive Head</span>
+                    <span class="text-[9px] font-extrabold bg-teal-950 text-teal-300 px-2 py-0.5 rounded-full border border-teal-500/30" id="step-status">3D Clinical Mesh</span>
                 </div>
                 
                 <!-- Speech Bubble Quote -->
                 <div class="mt-1">
                     <div class="speech-bubble text-slate-900 leading-tight">
-                        <span id="patient-speech">"Rotate the 3D head! Harvest back, plant front!"</span>
+                        <span id="patient-speech">"Receding Norwood III hairline! Let's get these gains!"</span>
                     </div>
                 </div>
 
@@ -162,18 +162,26 @@
                 <i class="fa-solid fa-syringe"></i> Anesthesia Syringe
             </div>
 
-            <!-- 3D Hint Badge -->
-            <div class="absolute top-2.5 right-2.5 bg-slate-800/90 text-amber-300 px-2.5 py-1 rounded-xl text-[10px] font-bold border border-slate-700 shadow-md flex items-center gap-1 pointer-events-none z-20">
-                <i class="fa-solid fa-cube"></i> Drag to Rotate 3D Head
+            <!-- Preset Camera Controls -->
+            <div class="absolute top-2.5 right-2.5 flex gap-1 z-20">
+                <button id="cam-face-btn" class="bg-slate-800/90 hover:bg-slate-700 text-amber-300 px-2 py-1 rounded-lg text-[9px] font-bold border border-slate-700 shadow-md">
+                    <i class="fa-solid fa-user"></i> Face
+                </button>
+                <button id="cam-front-btn" class="bg-slate-800/90 hover:bg-slate-700 text-amber-300 px-2 py-1 rounded-lg text-[9px] font-bold border border-slate-700 shadow-md">
+                    <i class="fa-solid fa-arrow-up"></i> Front Top
+                </button>
+                <button id="cam-back-btn" class="bg-slate-800/90 hover:bg-slate-700 text-amber-300 px-2 py-1 rounded-lg text-[9px] font-bold border border-slate-700 shadow-md">
+                    <i class="fa-solid fa-arrow-down"></i> Back Donor
+                </button>
             </div>
 
             <!-- CRITICAL PAIN LOCKOUT OVERLAY (PAIN = 100%) -->
             <div id="pain-lockout-banner" class="hidden absolute inset-0 bg-rose-950/90 backdrop-blur-md z-40 p-4 flex flex-col items-center justify-center text-center border-4 border-rose-500">
                 <i class="fa-solid fa-triangle-exclamation text-5xl text-rose-500 mb-2 animate-bounce"></i>
-                <h2 class="text-2xl font-black text-white font-teko tracking-wider leading-none">PATIENT IN EXCESSIVE PAIN!</h2>
-                <p class="text-xs text-rose-200 font-bold mt-1 mb-3">Surgical actions are BLOCKED! Apply rescue anesthesia or cooling ice immediately!</p>
+                <h2 class="text-2xl font-black text-white font-teko tracking-wider leading-none">PAIN LOCKOUT ACTIVE! (100%)</h2>
+                <p class="text-xs text-rose-200 font-bold mt-1 mb-3">Patient is in severe distress! Inject anesthesia or spray cooling agent now!</p>
                 <button id="emergency-numb-btn" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider btn-arcade flex items-center gap-1.5 shadow-lg">
-                    <i class="fa-solid fa-syringe text-sm"></i> Emergency Numbing Shot
+                    <i class="fa-solid fa-syringe text-sm"></i> Emergency Local Anesthetic
                 </button>
             </div>
 
@@ -190,7 +198,7 @@
                 <i class="fa-solid fa-spray-can"></i> Lidocaine Spray
             </button>
             <button id="calm-music-btn" class="bg-slate-800 hover:bg-slate-700 border border-purple-500/30 text-purple-300 py-1.5 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 btn-arcade">
-                <i class="fa-solid fa-dumbbell"></i> Gym Beats
+                <i class="fa-solid fa-dumbbell"></i> Gym Beat Therapy
             </button>
         </div>
 
@@ -230,7 +238,7 @@
             <h2 class="text-2xl font-black text-amber-400 font-teko text-3xl tracking-wide leading-none">12-MONTH HAIRLINE TRANSFORMATION</h2>
             <p class="text-[10px] text-slate-400 mb-2">Coach Alex's Post-Op Gym Reveal</p>
 
-            <!-- Results Preview Box -->
+            <!-- Results Preview Canvas Box -->
             <div class="relative w-48 h-48 bg-slate-950 rounded-2xl overflow-hidden border-2 border-teal-400/40 shadow-inner mb-2 flex items-center justify-center">
                 <canvas id="timelapse-canvas" class="w-full h-full"></canvas>
             </div>
@@ -276,9 +284,9 @@
         </div>
     </div>
 
-    <!-- AUDIO & 3D GAME SCRIPT -->
+    <!-- AUDIO & 3D CLINICAL SCRIPT -->
     <script>
-        // --- SYNTHESIZED WEB AUDIO API SOUNDS ---
+        // --- SYNTHESIZED WEB AUDIO ENGINE ---
         class AudioEngine {
             constructor() { this.ctx = null; }
             init() {
@@ -296,31 +304,31 @@
                 osc.connect(gain); gain.connect(this.ctx.destination);
                 osc.start(); osc.stop(this.ctx.currentTime + 0.12);
             }
-            playPop(isClean = true) {
+            playPunch(isClean = true) {
                 if (!this.ctx) return;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-                osc.type = isClean ? 'sine' : 'square';
-                osc.frequency.setValueAtTime(isClean ? 400 : 120, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(isClean ? 950 : 60, this.ctx.currentTime + 0.08);
+                osc.type = isClean ? 'sine' : 'sawtooth';
+                osc.frequency.setValueAtTime(isClean ? 420 : 140, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(isClean ? 920 : 70, this.ctx.currentTime + 0.09);
                 gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.09);
                 osc.connect(gain); gain.connect(this.ctx.destination);
-                osc.start(); osc.stop(this.ctx.currentTime + 0.08);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.09);
             }
-            playScream() {
+            playPainScream() {
                 if (!this.ctx) return;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(220, this.ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(650, this.ctx.currentTime + 0.22);
-                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.22);
+                osc.frequency.setValueAtTime(240, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(680, this.ctx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.45, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
                 osc.connect(gain); gain.connect(this.ctx.destination);
-                osc.start(); osc.stop(this.ctx.currentTime + 0.22);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.25);
             }
-            playBeats() {
+            playSoothingBeats() {
                 if (!this.ctx) return;
                 const freqs = [130.81, 164.81, 196.00, 261.63];
                 freqs.forEach((f, i) => {
@@ -346,33 +354,33 @@
             targetGrafts: 60,
             patientSatisfaction: 100,
             patientPain: 0,
-            numbingLevel: 100, // Decays over time
+            numbingLevel: 100,
             patientBPM: 72,
             timeLeft: 240,
-            currentTool: 'anesthesia', // 'anesthesia', 'harvest', 'implant'
+            currentTool: 'anesthesia',
             isLockedOut: false
         };
 
         const GYM_QUOTES = {
             happy: [
-                "Extracting cleanly from the back donor zone!",
-                "Choi implanter pen placing grafts nicely!",
+                "Extracting roots cleanly from donor back!",
+                "Choi implanter pen planting flush on receding temple!",
                 "Sleeve gains and hairline gains!",
-                "Solid technique doctor!"
+                "Clean precision, doctor!"
             ],
             pain: [
-                "Ouch! Numbing wore off!",
-                "Bro! That hurts worse than leg day!",
-                "Pain is peaking! Inject more local anesthesia!",
-                "My heart rate is spiking!"
+                "Aaargh! Local numbing faded!",
+                "Bro! That hurts worse than a 500lb squat!",
+                "Spiking pain! Inject local anesthesia now!",
+                "Heart rate spiking!"
             ]
         };
 
-        // --- THREE.JS SCENE SETUP ---
+        // --- THREE.JS CLINICAL SCENE ---
         let scene, camera, renderer, controls;
-        let headGroup;
-        let donorMeshes = [];
-        let recipientMeshes = [];
+        let headGroup, donorGroup, recipientGroup;
+        let donorHairMeshes = [];
+        let recipientPoreMeshes = [];
         let raycaster, mouse;
         let container;
 
@@ -388,10 +396,10 @@
         function initThree() {
             container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x090d16);
+            scene.background = new THREE.Color(0x070a12);
 
             camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 0.5, 5.2);
+            camera.position.set(0, 0.3, 4.8);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
@@ -402,139 +410,184 @@
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 1.5;
-            controls.minDistance = 2.5;
-            controls.maxDistance = 7.0;
+            controls.maxPolarAngle = Math.PI / 1.45;
+            controls.minDistance = 2.2;
+            controls.maxDistance = 6.5;
 
             // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-            scene.add(ambientLight);
+            const ambient = new THREE.AmbientLight(0xffffff, 0.65);
+            scene.add(ambient);
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-            dirLight.position.set(5, 10, 7);
-            dirLight.castShadow = true;
-            scene.add(dirLight);
+            const keyLight = new THREE.DirectionalLight(0xffffff, 0.95);
+            keyLight.position.set(4, 8, 6);
+            keyLight.castShadow = true;
+            scene.add(keyLight);
 
-            const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
-            fillLight.position.set(-5, -5, -5);
-            scene.add(fillLight);
+            const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.45);
+            rimLight.position.set(-5, -3, -5);
+            scene.add(rimLight);
 
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
 
-            buildTrainerHead();
+            buildAnatomicalTrainerHead();
 
             window.addEventListener('resize', onWindowResize);
         }
 
-        // --- BUILD 3D TRAINER HEAD (PROCEDURAL LIKENESS) ---
-        function buildTrainerHead() {
+        // --- SCULPT ANATOMICAL MALE PERSONAL TRAINER 3D HEAD ---
+        function buildAnatomicalTrainerHead() {
             headGroup = new THREE.Group();
             scene.add(headGroup);
 
-            const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xdfa888, roughness: 0.65 });
-            const hairMaterial = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.8 });
-            const shirtMaterial = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
-            const stubbleMaterial = new THREE.MeshStandardMaterial({ color: 0x2e1a0e, roughness: 0.9 });
+            // Realistic Skin & Hair Materials
+            const skinMat = new THREE.MeshStandardMaterial({
+                color: 0xdfa585,
+                roughness: 0.6,
+                metalness: 0.05
+            });
+            const hairMat = new THREE.MeshStandardMaterial({
+                color: 0x3d2314,
+                roughness: 0.85
+            });
+            const shirtMat = new THREE.MeshStandardMaterial({
+                color: 0x1e293b,
+                roughness: 0.8
+            });
+            const stubbleMat = new THREE.MeshStandardMaterial({
+                color: 0x2e1a0e,
+                roughness: 0.95
+            });
 
-            // 1. Dark V-Neck Gym Shirt
-            const shirtGeo = new THREE.CylinderGeometry(1.3, 1.7, 1.4, 32);
-            const shirt = new THREE.Mesh(shirtGeo, shirtMaterial);
-            shirt.position.y = -1.65;
+            // 1. Dark Gray V-Neck Gym Shirt
+            const shirtGeo = new THREE.CylinderGeometry(1.25, 1.65, 1.35, 32);
+            const shirt = new THREE.Mesh(shirtGeo, shirtMat);
+            shirt.position.y = -1.6;
             headGroup.add(shirt);
 
             // 2. Neck
-            const neckGeo = new THREE.CylinderGeometry(0.55, 0.65, 0.8, 32);
-            const neck = new THREE.Mesh(neckGeo, skinMaterial);
-            neck.position.y = -0.9;
+            const neckGeo = new THREE.CylinderGeometry(0.52, 0.62, 0.8, 32);
+            const neck = new THREE.Mesh(neckGeo, skinMat);
+            neck.position.y = -0.85;
             headGroup.add(neck);
 
-            // 3. Head Skull Base
-            const headGeo = new THREE.SphereGeometry(1.15, 32, 32);
-            headGeo.scale(1, 1.22, 1.08);
-            const head = new THREE.Mesh(headGeo, skinMaterial);
-            head.position.y = 0.1;
-            headGroup.add(head);
+            // 3. Head Cranium Geometry
+            const headGeo = new THREE.SphereGeometry(1.12, 36, 36);
+            headGeo.scale(1.0, 1.24, 1.1);
+            const cranium = new THREE.Mesh(headGeo, skinMat);
+            cranium.position.y = 0.12;
+            headGroup.add(cranium);
 
-            // 4. Ears
-            const earGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.4, 16);
+            // 4. Jaw & Chin Contours
+            const jawGeo = new THREE.BoxGeometry(1.15, 0.75, 1.1);
+            const jaw = new THREE.Mesh(jawGeo, skinMat);
+            jaw.position.set(0, -0.28, -0.15);
+            headGroup.add(jaw);
+
+            // 5. Defined Nose
+            const noseGeo = new THREE.ConeGeometry(0.18, 0.45, 16);
+            noseGeo.rotateX(-Math.PI / 6);
+            const nose = new THREE.Mesh(noseGeo, skinMat);
+            nose.position.set(0, 0.12, -1.18);
+            headGroup.add(nose);
+
+            // 6. Brown Eyes
+            const eyeGeo = new THREE.SphereGeometry(0.09, 16, 16);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x3d2314 });
+            
+            const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+            leftEye.position.set(-0.32, 0.28, -1.08);
+            headGroup.add(leftEye);
+
+            const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+            rightEye.position.set(0.32, 0.28, -1.08);
+            headGroup.add(rightEye);
+
+            // 7. Ears
+            const earGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.38, 16);
             earGeo.rotateZ(Math.PI / 2);
             
-            const leftEar = new THREE.Mesh(earGeo, skinMaterial);
-            leftEar.position.set(-1.12, 0.05, 0);
+            const leftEar = new THREE.Mesh(earGeo, skinMat);
+            leftEar.position.set(-1.12, 0.12, -0.05);
             headGroup.add(leftEar);
 
-            const rightEar = new THREE.Mesh(earGeo, skinMaterial);
-            rightEar.position.set(1.12, 0.05, 0);
+            const rightEar = new THREE.Mesh(earGeo, skinMat);
+            rightEar.position.set(1.12, 0.12, -0.05);
             headGroup.add(rightEar);
 
-            // 5. Beard & Stubble (Chin / Jaw / Upper Lip)
-            const beardGeo = new THREE.SphereGeometry(1.17, 32, 16, 0, Math.PI * 2, Math.PI * 0.4, Math.PI * 0.6);
-            const beard = new THREE.Mesh(beardGeo, stubbleMaterial);
-            beard.position.y = -0.1;
+            // 8. Stubble / Facial Beard Shader Box
+            const beardGeo = new THREE.SphereGeometry(1.14, 32, 16, 0, Math.PI * 2, Math.PI * 0.4, Math.PI * 0.55);
+            const beard = new THREE.Mesh(beardGeo, stubbleMat);
+            beard.position.y = -0.12;
             headGroup.add(beard);
 
-            // 6. BACK DONOR FOLLICLES (Dense Brown Hair on Back Z > 0)
-            donorMeshes = [];
-            const donorGroup = new THREE.Group();
+            // --- DONOR ZONE: BACK & SIDES (THICK 3D HAIR SHAFTS) ---
+            donorHairMeshes = [];
+            donorGroup = new THREE.Group();
             headGroup.add(donorGroup);
 
             for (let i = 0; i < 60; i++) {
                 const phi = Math.acos(-1 + (2 * i) / 60);
                 const theta = Math.sqrt(60 * Math.PI) * phi;
 
-                // Restrict to back hemisphere (Z > 0)
-                if (Math.sin(phi) * Math.sin(theta) > -0.2) {
-                    const radius = 1.18;
-                    const x = radius * Math.sin(phi) * Math.cos(theta);
-                    const y = radius * Math.cos(phi) + 0.1;
-                    const z = radius * Math.sin(phi) * Math.sin(theta);
+                const radius = 1.15;
+                const x = radius * Math.sin(phi) * Math.cos(theta);
+                const y = radius * Math.cos(phi) + 0.12;
+                const z = radius * Math.sin(phi) * Math.sin(theta);
 
-                    if (z > 0.15) { // Back of head
-                        const follicleGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.15, 8);
-                        const follicleMat = new THREE.MeshStandardMaterial({ color: 0x3d2314 });
-                        const follicle = new THREE.Mesh(follicleGeo, follicleMat);
-                        
-                        follicle.position.set(x, y, z);
-                        follicle.lookAt(x * 2, y * 2, z * 2);
-                        follicle.userData = { type: 'donor', id: donorMeshes.length, extracted: false };
-                        
-                        donorGroup.add(follicle);
-                        donorMeshes.push(follicle);
-                    }
+                // Filter for back and side donor scalp areas (z > 0.1)
+                if (z > 0.12 && y > -0.2) {
+                    // Hair Shaft Geometry
+                    const hairShaftGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.22, 6);
+                    hairShaftGeo.translate(0, 0.11, 0); // Origin at root base
+                    const hairShaft = new THREE.Mesh(hairShaftGeo, hairMat);
+
+                    hairShaft.position.set(x, y, z);
+                    const normal = new THREE.Vector3(x, y - 0.12, z).normalize();
+                    hairShaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+
+                    hairShaft.userData = { type: 'donor', id: donorHairMeshes.length, extracted: false, pos: new THREE.Vector3(x,y,z), norm: normal };
+
+                    donorGroup.add(hairShaft);
+                    donorHairMeshes.push(hairShaft);
                 }
             }
 
-            // 7. FRONT RECIPIENT PORES (M-Shape Receding Hairline on Front Z < 0)
-            recipientMeshes = [];
-            const recipientGroup = new THREE.Group();
+            // --- RECIPIENT ZONE: FRONT RECEDING M-SHAPE BALD TEMPLES ---
+            recipientPoreMeshes = [];
+            recipientGroup = new THREE.Group();
             headGroup.add(recipientGroup);
 
+            // Norwood III M-shaped receding hairline target slits
             for (let i = 0; i < 60; i++) {
-                const u = (i / 60) * Math.PI - Math.PI / 2; // arc across front
-                const v = 0.45 + (i % 5) * 0.08; // height offset
+                // Generate left & right temple recession points
+                const side = (i % 2 === 0) ? 1 : -1;
+                const row = Math.floor(i / 2);
 
-                const x = Math.sin(u) * 0.85;
-                const y = v + 0.55;
-                const z = -Math.cos(u) * 0.85 - 0.2;
+                const u = side * (0.22 + (row % 6) * 0.09); // Offset sideways into temples
+                const v = 0.65 + Math.floor(row / 6) * 0.08; // Height on high forehead
+                const z = -Math.sqrt(Math.max(0, 1.12 * 1.12 - u * u - (v - 0.12) * (v - 0.12))) + 0.05;
 
-                const poreGeo = new THREE.RingGeometry(0.03, 0.06, 12);
-                const poreMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide });
-                const pore = new THREE.Mesh(poreGeo, poreMat);
+                if (z < -0.3) {
+                    const poreGeo = new THREE.RingGeometry(0.02, 0.045, 12);
+                    const poreMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide });
+                    const pore = new THREE.Mesh(poreGeo, poreMat);
 
-                pore.position.set(x, y, z);
-                pore.lookAt(0, y, z - 1);
-                pore.userData = { type: 'recipient', id: recipientMeshes.length, implanted: false };
+                    pore.position.set(u, v, z);
+                    const normal = new THREE.Vector3(u, v - 0.12, z).normalize();
+                    pore.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
 
-                recipientGroup.add(pore);
-                recipientMeshes.push(pore);
+                    pore.userData = { type: 'recipient', id: recipientPoreMeshes.length, implanted: false, pos: new THREE.Vector3(u,v,z), norm: normal };
+
+                    recipientGroup.add(pore);
+                    recipientPoreMeshes.push(pore);
+                }
             }
         }
 
-        // --- RAYCASTING INTERACTIONS (TOUCH & CLICK) ---
+        // --- CONTROLS & SURGICAL INTERACTION ---
         function setupControls() {
             const dom = renderer.domElement;
-
             let pointerDownPos = { x: 0, y: 0 };
 
             dom.addEventListener('pointerdown', (e) => {
@@ -544,7 +597,7 @@
 
             dom.addEventListener('pointerup', (e) => {
                 const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
-                if (dist < 8) { // Tap / Click action
+                if (dist < 8) { // Tap/Click action
                     audio.init();
                     if (state.isLockedOut) return;
 
@@ -553,52 +606,63 @@
                     mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
                     raycaster.setFromCamera(mouse, camera);
-                    
+
                     if (state.currentTool === 'anesthesia') {
                         state.numbingLevel = Math.min(100, state.numbingLevel + 35);
                         audio.playInject();
-                        spawnFloatingText(e.clientX, e.clientY, "NUMBING INJECTED! 💉", "#38bdf8");
+                        spawnFloatingText(e.clientX, e.clientY, "NUMBED! 💉", "#38bdf8");
                         triggerSpeech('happy');
                         updateUI();
                     } else if (state.currentTool === 'harvest') {
-                        const intersects = raycaster.intersectObjects(donorMeshes);
+                        const intersects = raycaster.intersectObjects(donorHairMeshes);
                         if (intersects.length > 0) {
                             const hit = intersects[0].object;
                             if (!hit.userData.extracted) {
                                 hit.userData.extracted = true;
-                                hit.visible = false; // Hide extracted root
+                                hit.visible = false; // Extract hair shaft
+
+                                // Leave micro-punch red extraction dot on scalp surface
+                                const markGeo = new THREE.CircleGeometry(0.02, 8);
+                                const markMat = new THREE.MeshBasicMaterial({ color: 0x991b1b, side: THREE.DoubleSide });
+                                const mark = new THREE.Mesh(markGeo, markMat);
+                                mark.position.copy(hit.userData.pos);
+                                mark.quaternion.copy(hit.quaternion);
+                                headGroup.add(mark);
+
                                 state.harvestedVault++;
                                 state.cash += 25;
-                                audio.playPop(true);
-                                spawnFloatingText(e.clientX, e.clientY, "HARVESTED! ✂️", "#2dd4bf");
+                                audio.playPunch(true);
+                                spawnFloatingText(e.clientX, e.clientY, "GRAFT EXTRACTED! ✂️", "#2dd4bf");
                                 applyPain(state.numbingLevel > 20 ? 3 : 20);
                                 updateUI();
                             }
                         }
                     } else if (state.currentTool === 'implant') {
                         if (state.harvestedVault <= 0) {
-                            audio.playPop(false);
-                            spawnFloatingText(e.clientX, e.clientY, "HARVEST FROM BACK FIRST!", "#f43f5e");
+                            audio.playPunch(false);
+                            spawnFloatingText(e.clientX, e.clientY, "HARVEST DONOR BACK FIRST!", "#f43f5e");
                             return;
                         }
 
-                        const intersects = raycaster.intersectObjects(recipientMeshes);
+                        const intersects = raycaster.intersectObjects(recipientPoreMeshes);
                         if (intersects.length > 0) {
                             const hit = intersects[0].object;
                             if (!hit.userData.implanted) {
                                 hit.userData.implanted = true;
                                 hit.material.color.set(0x10b981); // Turn green when planted
 
-                                // Add small hair fiber protruding
-                                const fiberGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.3, 6);
-                                const fiberMat = new THREE.MeshStandardMaterial({ color: 0x3d2314 });
-                                const fiber = new THREE.Mesh(fiberGeo, fiberMat);
-                                fiber.position.copy(hit.position);
-                                fiber.rotation.copy(hit.rotation);
-                                headGroup.add(fiber);
+                                // Plant 3D Hair Shaft into recipient scalp
+                                const hairMat = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.85 });
+                                const implantedShaftGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.22, 6);
+                                implantedShaftGeo.translate(0, 0.11, 0);
+                                const implantedShaft = new THREE.Mesh(implantedShaftGeo, hairMat);
+
+                                implantedShaft.position.copy(hit.userData.pos);
+                                implantedShaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), hit.userData.norm);
+                                headGroup.add(implantedShaft);
 
                                 state.harvestedVault--;
-                                audio.playPop(true);
+                                audio.playPunch(true);
                                 spawnFloatingText(e.clientX, e.clientY, "PLANTED! 🌱", "#34d399");
                                 applyPain(state.numbingLevel > 20 ? 3 : 22);
                                 updateUI();
@@ -607,6 +671,11 @@
                     }
                 }
             });
+
+            // Preset Camera Buttons
+            document.getElementById('cam-face-btn').addEventListener('click', () => setCameraPreset(0, 0.3, 4.8));
+            document.getElementById('cam-front-btn').addEventListener('click', () => setCameraPreset(0, 3.2, 2.5));
+            document.getElementById('cam-back-btn').addEventListener('click', () => setCameraPreset(0, 1.2, -4.5));
 
             // Tool Buttons
             document.querySelectorAll('.tool-btn').forEach(btn => {
@@ -619,7 +688,7 @@
             // Emergency Numbing Button
             document.getElementById('emergency-numb-btn').addEventListener('click', () => {
                 state.numbingLevel = Math.min(100, state.numbingLevel + 70);
-                state.patientPain = Math.max(0, state.patientPain - 50);
+                state.patientPain = Math.max(0, state.patientPain - 55);
                 checkPainLockout();
                 audio.playInject();
                 updateUI();
@@ -638,6 +707,12 @@
             });
         }
 
+        function setCameraPreset(x, y, z) {
+            camera.position.set(x, y, z);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        }
+
         function selectTool(tool) {
             state.currentTool = tool;
             const badge = document.getElementById('phase-badge');
@@ -653,21 +728,21 @@
             });
 
             if (tool === 'anesthesia') {
-                badge.innerHTML = `<i class="fa-solid fa-syringe"></i> Anesthesia Syringe`;
+                badge.innerHTML = `<i class="fa-solid fa-syringe"></i> Local Anesthetic Injection`;
             } else if (tool === 'harvest') {
-                badge.innerHTML = `<i class="fa-solid fa-scissors"></i> FUE Motor Extraction (Rotate to Back)`;
+                badge.innerHTML = `<i class="fa-solid fa-scissors"></i> FUE Motor Extract (Rotate Back)`;
             } else if (tool === 'implant') {
-                badge.innerHTML = `<i class="fa-solid fa-hand-holding-medical"></i> Choi Implanter (Rotate to Front)`;
+                badge.innerHTML = `<i class="fa-solid fa-hand-holding-medical"></i> Choi Pen Implant (Rotate Front)`;
             }
         }
 
         function applyPain(amount) {
             state.patientPain = Math.min(100, state.patientPain + amount);
             state.patientSatisfaction = Math.max(0, state.patientSatisfaction - amount * 0.35);
-            state.patientBPM = Math.min(175, 72 + Math.round(state.patientPain * 0.95));
+            state.patientBPM = Math.min(180, 72 + Math.round(state.patientPain * 0.95));
 
             if (amount > 10) {
-                audio.playScream();
+                audio.playPainScream();
                 triggerSpeech('pain');
             }
             checkPainLockout();
@@ -693,7 +768,7 @@
 
         function applyCalm(type) {
             audio.init();
-            audio.playBeats();
+            audio.playSoothingBeats();
 
             if (type === 'ice') {
                 state.patientPain = Math.max(0, state.patientPain - 25);
@@ -735,7 +810,7 @@
             document.getElementById('pain-val').innerText = `${Math.round(state.patientPain)}%`;
             document.getElementById('bpm-display').innerText = state.patientBPM;
 
-            const implantedCount = recipientMeshes.filter(m => m.userData.implanted).length;
+            const implantedCount = recipientPoreMeshes.filter(m => m.userData.implanted).length;
             document.getElementById('graft-counter').innerText = `${implantedCount} / ${state.targetGrafts} Grafts`;
 
             const emojiEl = document.getElementById('patient-emoji');
@@ -785,9 +860,9 @@
 
         // --- 12-MONTH TIMELAPSE REVEAL ---
         function finishSurgery() {
-            audio.playBeats();
+            audio.playSoothingBeats();
 
-            const implantedCount = recipientMeshes.filter(m => m.userData.implanted).length;
+            const implantedCount = recipientPoreMeshes.filter(m => m.userData.implanted).length;
             const ratio = implantedCount / state.targetGrafts;
             let grade = 'F';
             let likes = '650';
@@ -821,11 +896,11 @@
             tCanvas.width = 192;
             tCanvas.height = 192;
 
-            tCtx.fillStyle = '#090d16';
+            tCtx.fillStyle = '#070a12';
             tCtx.fillRect(0, 0, 192, 192);
 
-            // Draw full restored hair head preview
-            tCtx.fillStyle = '#dfa888';
+            // Restored frontal hairline preview
+            tCtx.fillStyle = '#dfa585';
             tCtx.beginPath();
             tCtx.arc(96, 96, 65, 0, Math.PI * 2);
             tCtx.fill();
