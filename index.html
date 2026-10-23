@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HAIR RECOVERY: Anatomical FUE & Implant Simulator</title>
+    <title>HAIR RECOVERY: High-Fidelity 3D Clinical Simulator</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -108,8 +108,8 @@
         <div class="bg-slate-900/95 rounded-2xl p-2.5 border border-slate-800 shadow-2xl flex items-center gap-2.5 relative">
             <!-- Patient Avatar Icon -->
             <div class="relative w-12 h-12 rounded-full bg-slate-800 flex-shrink-0 flex items-center justify-center text-3xl border-2 border-teal-500/50 shadow-inner overflow-hidden" id="avatar-box">
-                <span id="patient-emoji">💪</span>
-                <span id="sweat-icon" class="hidden absolute top-0 right-0 text-xs animate-bounce">💦</span>
+                <i id="patient-emoji" class="fa-solid fa-face-smile text-teal-300"></i>
+                <i id="sweat-icon" class="hidden absolute top-1 right-1 text-xs animate-bounce fa-solid fa-droplet text-sky-300"></i>
             </div>
 
             <div class="flex-grow min-w-0">
@@ -251,7 +251,7 @@
                 </div>
                 <div class="bg-slate-800 px-3 py-1 rounded-xl border border-slate-700">
                     <span class="text-[9px] text-slate-400 block">GYM LIKES</span>
-                    <span id="res-likes" class="text-xl font-black text-rose-400 leading-none">❤️ 24.1k</span>
+                    <span id="res-likes" class="text-xl font-black text-rose-400 leading-none"> 24.1k</span>
                 </div>
             </div>
 
@@ -383,9 +383,6 @@
         let headGroup, donorGroup, recipientGroup;
         let donorHairMeshes = [];
         let recipientPoreMeshes = [];
-        let harvestedGrafts = [];
-        let scalpMarkMeshes = [];
-        let implantedGraftMeshes = [];
         let raycaster, mouse;
         let container;
 
@@ -428,6 +425,7 @@
             keyLight.castShadow = true;
             scene.add(keyLight);
 
+            scene.add(new THREE.HemisphereLight(0xdde6ff, 0x3a2a25, 0.35));
             const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.45);
             rimLight.position.set(-5, -3, -5);
             scene.add(rimLight);
@@ -440,158 +438,218 @@
             window.addEventListener('resize', onWindowResize);
         }
 
-        // --- HIGHER-FIDELITY PATIENT HEAD + CURVED SCALP FOLLICLES ---
-        // Coordinates: face is local -Z; donor occipital scalp is local +Z.
-        // Follicle roots are sampled on the ellipsoid and their direction follows its surface normal.
-        function buildAnatomicalTrainerHead() {
-            headGroup = new THREE.Group();
-            scene.add(headGroup);
-            headGroup.rotation.y = Math.PI;
+        // --- PROCEDURAL 3D HEAD + FOLLICLE SYSTEM ---
+        const C0 = new THREE.Vector3(0, 0.12, 0);
+        let headMesh, hairMat, skinFlat, skinTex, skinCanvas, strandTpl;
+        let donorMesh, impMesh, exPun, exHalo, siteSlit, siteHalo;
+        let donorUnits = [], vaultHairs = [], anims = [], fxList = [];
+        const V = (x, y, z) => new THREE.Vector3(x || 0, y || 0, z || 0);
+        const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+        const dirOf = (a, e) => V(Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e));
+        const gau = (a, e, a0, e0, sa, se) => Math.exp(-(((a - a0) / sa) ** 2 + ((e - e0) / se) ** 2));
+        const CROWN = V(0, 1, 0.45).normalize();
 
-            const skinMat = new THREE.MeshStandardMaterial({ color: 0xc9957e, roughness: 0.72, metalness: 0 });
-            const skinLight = new THREE.MeshStandardMaterial({ color: 0xd5a18a, roughness: 0.68 });
-            const hairMat = new THREE.MeshStandardMaterial({ color: 0x38251b, roughness: 0.84 });
-            const hairHiMat = new THREE.MeshStandardMaterial({ color: 0x52392b, roughness: 0.78 });
-            const shirtMat = new THREE.MeshStandardMaterial({ color: 0x30343a, roughness: 0.9 });
-            const darkMat = new THREE.MeshStandardMaterial({ color: 0x241812, roughness: 0.94 });
-            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xe7ddd4, roughness: 0.42 });
-            const irisMat = new THREE.MeshStandardMaterial({ color: 0x70472b, roughness: 0.35 });
-            const pupilMat = new THREE.MeshBasicMaterial({ color: 0x17120f });
-            const lipMat = new THREE.MeshStandardMaterial({ color: 0x9c6258, roughness: 0.8 });
-
-            // Torso, neck, and craniofacial volumes.
-            const shirt = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.62, 1.35, 48), shirtMat);
-            shirt.position.y = -1.62; headGroup.add(shirt);
-            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.58, 0.88, 40), skinMat);
-            neck.position.set(0, -0.88, -0.02); headGroup.add(neck);
-            const headGeo = new THREE.SphereGeometry(1, 72, 56);
-            headGeo.scale(0.91, 1.22, 0.94);
-            const cranium = new THREE.Mesh(headGeo, skinMat);
-            cranium.position.set(0, 0.12, 0); cranium.castShadow = true; cranium.receiveShadow = true; headGroup.add(cranium);
-
-            // Face is built from overlapping, softly shaded forms rather than primitive boxes.
-            function ellipsoid(name, pos, scale, mat, segments=32) {
-                const m = new THREE.Mesh(new THREE.SphereGeometry(1, segments, Math.max(20, segments-4)), mat);
-                m.name = name; m.position.set(...pos); m.scale.set(...scale); m.castShadow = true; m.receiveShadow = true; headGroup.add(m); return m;
+        // Head surface: ellipsoid cranium + displaced brow, sockets, nose, cheeks, lips, chin, tapered jaw.
+        function surf(d) {
+            const a = Math.atan2(d.x, -d.z), e = Math.asin(Math.max(-1, Math.min(1, d.y)));
+            const low = sstep(0.05, -0.75, d.y);
+            const rx = 1.1 * (1 - 0.3 * low), ry = 0.98 + 0.4 * sstep(-0.5, 0.5, d.y), rz = 1.22;
+            let s = 0.045 * gau(a, e, 0, 0.5, 0.55, 0.3);
+            for (const k of [-1, 1]) {
+                s += 0.05 * gau(a, e, k * 0.3, 0.2, 0.28, 0.07) - 0.05 * gau(a, e, k * 0.3, 0.1, 0.13, 0.08)
+                   + 0.035 * gau(a, e, k * 0.55, -0.2, 0.3, 0.18) + 0.05 * gau(a, e, k * 0.13, -0.27, 0.07, 0.06);
             }
-            ellipsoid('midface', [0,-0.12,-0.63], [0.70,0.70,0.35], skinMat);
-            ellipsoid('jaw', [0,-0.48,-0.48], [0.68,0.48,0.48], skinMat);
-            ellipsoid('chin', [0,-0.76,-0.60], [0.31,0.18,0.20], skinLight);
-            ellipsoid('nose bridge', [0,-0.02,-0.93], [0.115,0.31,0.16], skinLight);
-            ellipsoid('nose tip', [0,-0.22,-1.00], [0.15,0.105,0.13], skinLight);
-            ellipsoid('left nostril', [-0.09,-0.285,-0.98], [0.045,0.025,0.025], darkMat, 20);
-            ellipsoid('right nostril', [0.09,-0.285,-0.98], [0.045,0.025,0.025], darkMat, 20);
-            // Brows, eye sockets, eyeballs, irises, and pupils.
-            for (const side of [-1,1]) {
-                ellipsoid('cheek', [side*0.43,-0.28,-0.73], [0.27,0.25,0.18], skinLight);
-                ellipsoid('brow', [side*0.30,0.205,-0.82], [0.255,0.075,0.095], darkMat);
-                ellipsoid('eye white', [side*0.30,0.105,-0.855], [0.205,0.105,0.075], whiteMat);
-                ellipsoid('iris', [side*0.30,0.10,-0.923], [0.071,0.071,0.025], irisMat, 24);
-                ellipsoid('pupil', [side*0.30,0.10,-0.945], [0.032,0.043,0.015], pupilMat, 20);
-                ellipsoid('ear', [side*0.91,0.03,-0.015], [0.15,0.245,0.105], skinMat);
-                ellipsoid('ear concha', [side*0.99,0.03,-0.075], [0.065,0.12,0.035], lipMat, 24);
-                // Subtle nasolabial/beard-region shading adds facial definition.
-                ellipsoid('beard shadow', [side*0.29,-0.54,-0.69], [0.29,0.22,0.055], darkMat);
-            }
-            ellipsoid('upper lip', [0,-0.48,-0.86], [0.22,0.045,0.035], lipMat);
-            ellipsoid('lower lip', [0,-0.55,-0.85], [0.19,0.045,0.04], lipMat);
-            ellipsoid('chin stubble', [0,-0.70,-0.79], [0.30,0.12,0.04], darkMat);
+            s += 0.17 * gau(a, e, 0, -0.05, 0.09, 0.17) + 0.15 * gau(a, e, 0, -0.27, 0.09, 0.07)
+               + 0.05 * gau(a, e, 0, -0.5, 0.2, 0.05) - 0.03 * gau(a, e, 0, -0.58, 0.15, 0.03) + 0.08 * gau(a, e, 0, -0.72, 0.22, 0.12);
+            return V(C0.x + d.x * (rx + s), C0.y + d.y * (ry + s), C0.z + d.z * (rz + s));
+        }
+        // Surface point + smooth normal (finite differences) so every root sits on the true curvature.
+        function frame(d) {
+            const p = surf(d), t1 = V(0, 1, 0).cross(d);
+            if (t1.lengthSq() < 1e-4) t1.set(1, 0, 0);
+            t1.normalize();
+            const t2 = d.clone().cross(t1), h = 0.004;
+            const p1 = surf(d.clone().addScaledVector(t1, h).normalize()), p2 = surf(d.clone().addScaledVector(t2, h).normalize());
+            const n = V().crossVectors(p1.sub(p), p2.sub(p)).normalize();
+            if (n.dot(d) < 0) n.negate();
+            return { p, n };
+        }
+        // Natural growth direction: crown whorl at the back, forward-sweeping frontal hair.
+        function flow(p, n) {
+            const d = p.clone().sub(C0).normalize();
+            const rad = d.clone().addScaledVector(CROWN, -d.dot(CROWN));
+            const back = rad.clone().addScaledVector(V().crossVectors(n, rad), 0.7).normalize();
+            const front = V(Math.sign(d.x) * 0.35 * Math.min(1, Math.abs(d.x) * 2.5), 0, -1);
+            const t = sstep(-0.1, 0.6, d.z);
+            const v = front.multiplyScalar(1 - t).addScaledVector(back, t);
+            v.addScaledVector(n, -v.dot(n));
+            if (v.lengthSq() < 1e-4) v.set(0, -1, 0).addScaledVector(n, n.y);
+            return v.normalize().applyAxisAngle(n, (Math.random() - 0.5) * 0.35);
+        }
+        // M-shaped receded hairline and scalp zones (1 native hair, 2 donor, 0 bare).
+        function hairlineEl(a) { const A = Math.abs(a); return 0.74 + 0.14 * Math.exp(-(((A - 0.62) / 0.28) ** 2)) - 0.06 * Math.exp(-((A / 0.18) ** 2)); }
+        function floorEl(a) { const f = hairlineEl(a) + 0.22; return f + (0.15 - f) * sstep(0.85, 1.6, Math.abs(a)); }
+        function zone(d) {
+            const a = Math.atan2(d.x, -d.z), e = Math.asin(d.y);
+            if (Math.abs(a) > 1.9) return e < -0.3 ? 0 : (e < 0.55 ? 2 : 1);
+            return e > floorEl(a) ? 1 : 0;
+        }
+        function rndDir() { const z = Math.random() * 2 - 1, a = Math.random() * 6.2832, s = Math.sqrt(1 - z * z); return V(s * Math.cos(a), z, s * Math.sin(a)); }
 
-            // Keep the supplied portrait as a subtle, curved identity surface on the front only.
-            // It is deliberately behind the 3D facial features and never used as the scalp itself.
-            const patientPhoto = new Image();
-            patientPhoto.onload = () => {
-                const c = document.createElement('canvas'); c.width = patientPhoto.naturalWidth; c.height = patientPhoto.naturalHeight;
-                c.getContext('2d').drawImage(patientPhoto, 0, 0);
-                const tex = new THREE.CanvasTexture(c);
-                if (tex.colorSpace !== undefined && THREE.SRGBColorSpace !== undefined) tex.colorSpace = THREE.SRGBColorSpace;
-                const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.10, depthWrite: false, side: THREE.DoubleSide });
-                const identity = new THREE.Mesh(new THREE.PlaneGeometry(1.45, 2.52, 16, 24), mat);
-                identity.position.set(0, -0.02, -0.91); identity.userData.isPatientPhoto = true;
-                // Slightly bow the plane so the reference overlay follows the face's depth.
-                const pos = identity.geometry.attributes.position;
-                for (let i=0; i<pos.count; i++) { const x=pos.getX(i), y=pos.getY(i); pos.setZ(i, -0.055*(1-(x/0.73)**2) + 0.018*y*y); }
-                identity.geometry.computeVertexNormals(); headGroup.add(identity);
-            };
-            patientPhoto.src = PATIENT_PHOTO_DATA;
-
-            // A scalp shell, shaped like the cranium, gives extraction dots and recipient sites a real surface.
-            const scalpGeo = new THREE.SphereGeometry(1, 72, 56); scalpGeo.scale(0.925, 1.235, 0.955);
-            const scalpMat = new THREE.MeshStandardMaterial({ color: 0x9f7664, roughness: 0.9, side: THREE.DoubleSide });
-            const scalp = new THREE.Mesh(scalpGeo, scalpMat); scalp.position.set(0,0.12,0); scalp.name='scalp shell'; headGroup.add(scalp);
-            // Hairline/top hair mass, tapered back toward the crown; individual strands remain selectable.
-            const hairCapGeo = new THREE.SphereGeometry(1, 64, 40, 0, Math.PI*2, 0, Math.PI*0.48);
-            hairCapGeo.scale(0.95, 1.25, 0.98);
-            const hairCap = new THREE.Mesh(hairCapGeo, new THREE.MeshStandardMaterial({ color:0x39281e, roughness:0.92, side:THREE.DoubleSide }));
-            hairCap.position.set(0,0.14,0); headGroup.add(hairCap);
-
-            donorHairMeshes = []; recipientPoreMeshes = []; harvestedGrafts = []; scalpMarkMeshes = []; implantedGraftMeshes = [];
-            donorGroup = new THREE.Group(); headGroup.add(donorGroup);
-            recipientGroup = new THREE.Group(); headGroup.add(recipientGroup);
-
-            // Ellipsoid surface point and outward normal. All follicles align to local scalp curvature.
-            function scalpSurface(x, y, zSign) {
-                const yy = (y-0.12)/1.235;
-                const xx = x/0.925;
-                const rem = Math.max(0.025, 1-xx*xx-yy*yy);
-                const z = zSign * 0.955 * Math.sqrt(rem);
-                const pos = new THREE.Vector3(x,y,z);
-                const normal = new THREE.Vector3(x/(0.925*0.925), (y-0.12)/(1.235*1.235), z/(0.955*0.955)).normalize();
-                return {pos, normal};
-            }
-            function makeFollicle(root, normal, length, material, radius=0.009) {
-                const group = new THREE.Group();
-                // Shaft leans tangentially with a small, natural variation in direction.
-                const tangent = new THREE.Vector3(normal.x*0.28 + (Math.random()-0.5)*0.16, 0.12 + Math.random()*0.10, normal.z*0.22).normalize();
-                const shaftGeo = new THREE.CylinderGeometry(radius*0.55, radius, length, 7);
-                shaftGeo.translate(0, length*0.48, 0);
-                const shaft = new THREE.Mesh(shaftGeo, material); shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), tangent); group.add(shaft);
-                const bulb = new THREE.Mesh(new THREE.SphereGeometry(radius*1.25, 10, 8), new THREE.MeshStandardMaterial({color:0x4c3023, roughness:0.95}));
-                bulb.position.copy(tangent).multiplyScalar(-0.012); group.add(bulb);
-                group.position.copy(root); group.userData.growth=tangent.clone(); return group;
-            }
-
-            // FUE donor zone: posterior and posterolateral horseshoe, with naturally varied spacing.
-            let seed = 71821; const rand = () => { seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; };
-            for (let i=0; i<520; i++) {
-                const theta = (i/520)*Math.PI*2;
-                const y = -0.38 + rand()*1.05;
-                const x = 0.82*Math.sin(theta) * Math.sqrt(Math.max(0.15,1-((y-0.12)/1.235)**2));
-                const zSign = Math.cos(theta) >= 0 ? 1 : -1;
-                // Keep donor harvesting on the back and side, not the frontal face.
-                if (zSign < 0 && Math.abs(theta) < 0.85) continue;
-                const surf = scalpSurface(x, y, zSign);
-                const root = surf.pos.clone().addScaledVector(surf.normal, 0.012);
-                const strand = makeFollicle(root, surf.normal, 0.105 + rand()*0.085, rand()<0.18 ? hairHiMat : hairMat, 0.006 + rand()*0.003);
-                strand.userData = {type:'donor', id:donorHairMeshes.length, extracted:false, pos:root.clone(), norm:surf.normal.clone(), growth:strand.userData.growth.clone()};
-                donorGroup.add(strand); donorHairMeshes.push(strand);
-            }
-
-            // Recipient region: 60 individually oriented sites following the actual curved frontal scalp.
-            // Slightly irregular M-shaped recession with a denser central forelock transition.
-            for (let i=0; i<60; i++) {
-                const t = i/59; const x = -0.68 + t*1.36;
-                const edge = Math.abs(x)/0.68;
-                const y = 0.82 - 0.22*Math.pow(edge,1.65) + (rand()-0.5)*0.035 + 0.012*Math.sin(i*2.4);
-                const surf = scalpSurface(x, y, -1);
-                const pos = surf.pos.clone().addScaledVector(surf.normal, 0.014);
-                const poreGeo = new THREE.RingGeometry(0.010, 0.020, 12);
-                const poreMat = new THREE.MeshBasicMaterial({color:0xc46b61, side:THREE.DoubleSide, depthTest:true});
-                const pore = new THREE.Mesh(poreGeo, poreMat); pore.position.copy(pos);
-                pore.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), surf.normal.clone().negate());
-                pore.userData = {type:'recipient', id:recipientPoreMeshes.length, implanted:false, pos:pos.clone(), norm:surf.normal.clone().negate(), growth:new THREE.Vector3(-x*0.22,0.18,-1).normalize()};
-                recipientGroup.add(pore); recipientPoreMeshes.push(pore);
-            }
+        // Curved, tapered hair strand template (unit length, bends toward +Z).
+        function strandGeo() {
+            const S = 4, K = 3, p = [], ix = [];
+            for (let j = 0; j <= S; j++) { const t = j / S, r = 0.05 * (1 - 0.75 * t); for (let k = 0; k < K; k++) { const a = k / K * 6.2832; p.push(Math.cos(a) * r, t, t * t * 0.5 + Math.sin(a) * r); } }
+            for (let j = 0; j < S; j++) for (let k = 0; k < K; k++) { const a = j * K + k, b = j * K + (k + 1) % K; ix.push(a, a + K, b, b, a + K, b + K); }
+            const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setIndex(ix); g.computeVertexNormals(); return g;
+        }
+        function setPart(mesh, i, q, off, s) {
+            const m = new THREE.Matrix4().makeBasis(q.X.clone().multiplyScalar(s), q.Y.clone().multiplyScalar(s), q.Z.clone().multiplyScalar(s));
+            m.setPosition(q.p.x + q.n.x * off, q.p.y + q.n.y * off, q.p.z + q.n.z * off);
+            mesh.setMatrixAt(i, m); mesh.instanceMatrix.needsUpdate = true;
+        }
+        // One individually oriented hair: angled ~30 deg off the skin along the local flow, fanned within its unit.
+        function makePart(p, n, fv, L, fan) {
+            const dir = n.clone().multiplyScalar(0.5).addScaledVector(fv, 0.85).normalize().applyAxisAngle(n, fan || 0);
+            const Z = fv.clone().addScaledVector(dir, -fv.dot(dir)).normalize(), X = V().crossVectors(dir, Z);
+            return { p: p.clone().addScaledVector(n, -0.004), n, X: X.multiplyScalar(L), Y: dir.multiplyScalar(L), Z: Z.multiplyScalar(L) };
+        }
+        function newHairMesh(max) {
+            const m = new THREE.InstancedMesh(strandTpl, hairMat, max); m.frustumCulled = false; m.count = 0; headGroup.add(m); return m;
+        }
+        function pushHair(m, part) {
+            const i = m.count++; setPart(m, i, part, 0, 1);
+            const g = 0.75 + Math.random() * 0.4; m.setColorAt(i, new THREE.Color(g, g, g)); m.instanceColor.needsUpdate = true; return i;
+        }
+        function setMarker(m, i, p, n, fv, sx, sy, lift, col) {
+            const X = V().crossVectors(fv, n).multiplyScalar(sx), Y = fv.clone().multiplyScalar(sy);
+            const mat = new THREE.Matrix4().makeBasis(X, Y, n.clone());
+            mat.setPosition(p.x + n.x * lift, p.y + n.y * lift, p.z + n.z * lift);
+            m.setMatrixAt(i, mat); m.instanceMatrix.needsUpdate = true;
+            if (col !== undefined) { m.setColorAt(i, new THREE.Color(col)); m.instanceColor.needsUpdate = true; }
+        }
+        function markerMesh(r, n, op) {
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: op, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+            const m = new THREE.InstancedMesh(new THREE.CircleGeometry(r, 12), mat, n); m.frustumCulled = false; headGroup.add(m); return m;
         }
 
-        function makeTransferGraft(growthDirection) {
-            const graft = new THREE.Group();
-            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.009, 0.13, 7), new THREE.MeshStandardMaterial({color:0x3b281d, roughness:0.86}));
-            shaft.position.y = 0.055; graft.add(shaft);
-            const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.012, 10, 8), new THREE.MeshStandardMaterial({color:0x5b3b2b, roughness:0.95}));
-            bulb.position.set(0,-0.008,0); graft.add(bulb);
-            graft.userData.growth = growthDirection.clone();
-            return graft;
+        // Skin map painted from colours sampled off the reference photo: pores, mottling, downcast eyes, brows, lips, stubble.
+        function paintSkin(skin, hair) {
+            const W = 2048, H = 1024, c = skinCanvas || (skinCanvas = document.createElement('canvas'));
+            c.width = W; c.height = H; const x = c.getContext('2d');
+            x.fillStyle = `rgb(${skin[0]},${skin[1]},${skin[2]})`; x.fillRect(0, 0, W, H);
+            const XY = (a, e) => { const d = dirOf(a, e); return [((Math.atan2(d.z, -d.x) / 6.2832 + 1) % 1) * W, Math.acos(d.y) / Math.PI * H]; };
+            for (let i = 0; i < 9000; i++) { x.fillStyle = `rgba(${Math.random() < 0.5 ? '190,90,80' : '120,70,55'},.035)`; x.beginPath(); x.arc(Math.random() * W, Math.random() * H, 6 + Math.random() * 30, 0, 7); x.fill(); }
+            const hc = (f, al) => `rgba(${hair[0] * f | 0},${hair[1] * f | 0},${hair[2] * f | 0},${al})`;
+            for (let i = 0; i < 40000; i++) { const d = rndDir(), z = zone(d); if (!z) continue; const [px, py] = XY(Math.atan2(d.x, -d.z), Math.asin(d.y)); x.fillStyle = hc(0.5, z === 2 ? 0.5 : 0.3); x.fillRect(px, py, 2, 2); }
+            for (let i = 0; i < 45000; i++) { const a = (Math.random() * 2 - 1) * 1.2, e = -0.95 + Math.random() * 0.85; if (e > -0.15 - Math.abs(a) * 0.15 || (Math.abs(a) < 0.2 && e > -0.56 && e < -0.46)) continue; const [px, py] = XY(a, e); x.fillStyle = hc(0.55, 0.45); x.fillRect(px, py, 2, 2); }
+            for (const k of [-1, 1]) {
+                const [ex, ey] = XY(k * 0.3, 0.1);
+                x.fillStyle = 'rgba(60,35,30,.3)'; x.beginPath(); x.ellipse(ex, ey - 4, 52, 26, 0, 0, 7); x.fill();
+                x.save(); x.beginPath(); x.ellipse(ex, ey, 34, 13, 0, 0, 7); x.clip();
+                x.fillStyle = '#d9cfc6'; x.fillRect(ex - 40, ey - 20, 80, 40);
+                x.fillStyle = '#4a2a18'; x.beginPath(); x.arc(ex, ey + 5, 12, 0, 7); x.fill();
+                x.fillStyle = '#120a06'; x.beginPath(); x.arc(ex, ey + 5, 5, 0, 7); x.fill();
+                x.fillStyle = `rgba(${skin[0]},${skin[1]},${skin[2]},.95)`; x.fillRect(ex - 40, ey - 20, 80, 17); x.restore();
+                x.strokeStyle = 'rgba(40,22,15,.6)'; x.lineWidth = 3; x.beginPath(); x.ellipse(ex, ey, 34, 13, 0, Math.PI, 6.2832); x.stroke();
+                for (let i = 0; i < 260; i++) { const t = Math.random(), [px, py] = XY(k * (0.1 + 0.4 * t), 0.265 + 0.05 * Math.sin(t * 2.4) + (Math.random() - 0.5) * 0.035); x.strokeStyle = hc(0.6, 0.6); x.lineWidth = 2; x.beginPath(); x.moveTo(px, py); x.lineTo(px + (Math.random() - 0.5) * 4, py - 5); x.stroke(); }
+            }
+            const [lx, ly] = XY(0, -0.5);
+            x.fillStyle = 'rgba(150,70,70,.5)'; x.beginPath(); x.ellipse(lx, ly, 46, 9, 0, 0, 7); x.fill();
+            x.fillStyle = 'rgba(70,25,25,.7)'; x.fillRect(lx - 40, ly - 1, 80, 3);
+            if (!skinTex) { skinTex = new THREE.CanvasTexture(c); }
+            skinTex.needsUpdate = true;
+        }
+
+        function buildAnatomicalTrainerHead() {
+            headGroup = new THREE.Group(); scene.add(headGroup);
+            let skinRGB = [201, 150, 126], hairRGB = [61, 35, 20];
+            hairMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(hairRGB[0] / 255, hairRGB[1] / 255, hairRGB[2] / 255), roughness: 0.55 });
+            skinFlat = new THREE.MeshStandardMaterial({ color: new THREE.Color(skinRGB[0] / 255 * 0.9, skinRGB[1] / 255 * 0.9, skinRGB[2] / 255 * 0.9), roughness: 0.8 });
+            const shirt = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.65, 1.35, 32), new THREE.MeshStandardMaterial({ color: 0x3a3f47, roughness: 0.85 }));
+            shirt.position.y = -1.6; headGroup.add(shirt);
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.62, 0.8, 32), skinFlat); neck.position.y = -0.85; headGroup.add(neck);
+            for (const k of [-1, 1]) { const ear = new THREE.Mesh(new THREE.SphereGeometry(0.2, 24, 16), skinFlat); ear.scale.set(0.3, 1, 0.65); ear.position.set(k * 1.12, 0.1, 0.08); ear.rotation.z = k * 0.12; headGroup.add(ear); }
+
+            // High-resolution displaced head mesh
+            const g = new THREE.SphereGeometry(1, 192, 128), pos = g.attributes.position;
+            for (let i = 0; i < pos.count; i++) { const p = surf(V(pos.getX(i), pos.getY(i), pos.getZ(i)).normalize()); pos.setXYZ(i, p.x, p.y, p.z); }
+            g.computeVertexNormals();
+            const nr = g.attributes.normal;
+            for (let r = 0; r <= 128; r++) { const a = r * 193, b = a + 192, n = V(nr.getX(a) + nr.getX(b), nr.getY(a) + nr.getY(b), nr.getZ(a) + nr.getZ(b)).normalize(); nr.setXYZ(a, n.x, n.y, n.z); nr.setXYZ(b, n.x, n.y, n.z); }
+            paintSkin(skinRGB, hairRGB);
+            const bc = document.createElement('canvas'); bc.width = 1024; bc.height = 512; const bx = bc.getContext('2d');
+            bx.fillStyle = '#808080'; bx.fillRect(0, 0, 1024, 512);
+            for (let i = 0; i < 50000; i++) { const v = 90 + Math.random() * 80 | 0; bx.fillStyle = `rgb(${v},${v},${v})`; bx.fillRect(Math.random() * 1024, Math.random() * 512, 1.5, 1.5); }
+            headMesh = new THREE.Mesh(g, new THREE.MeshPhysicalMaterial({ map: skinTex, bumpMap: new THREE.CanvasTexture(bc), bumpScale: 0.6, roughness: 0.62, clearcoat: 0.12, clearcoatRoughness: 0.45, emissive: 0x2a0d08, emissiveIntensity: 0.25 }));
+            headGroup.add(headMesh);
+
+            // Match skin and hair colour to the reference photo
+            const im = new Image();
+            im.onload = () => {
+                const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+                const x = c.getContext('2d'); x.drawImage(im, 0, 0); const W = c.width, H = c.height;
+                const avg = (fx, fy, fw, fh) => { const d = x.getImageData(fx * W | 0, fy * H | 0, fw * W | 0, fh * H | 0).data; let r = 0, gg = 0, b = 0; const n = d.length / 4; for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; b += d[i + 2]; } return [r / n | 0, gg / n | 0, b / n | 0]; };
+                skinRGB = avg(0.43, 0.33, 0.17, 0.05); hairRGB = avg(0.40, 0.15, 0.14, 0.04);
+                paintSkin(skinRGB, hairRGB);
+                hairMat.color.setRGB(hairRGB[0] / 255, hairRGB[1] / 255, hairRGB[2] / 255);
+                skinFlat.color.setRGB(skinRGB[0] / 255 * 0.9, skinRGB[1] / 255 * 0.9, skinRGB[2] / 255 * 0.9);
+            };
+            im.src = PATIENT_PHOTO_DATA;
+
+            // Hair: native (long), donor stubble (trimmed), interactive donor follicular units, implanted grafts
+            strandTpl = strandGeo();
+            const nat = newHairMesh(4600), buzz = newHairMesh(3000);
+            const scatter = (m, max, want, lo, hi) => { let tries = 0; while (m.count < max && tries++ < max * 40) { const d = rndDir(); if (zone(d) !== want) continue; const f = frame(d); pushHair(m, makePart(f.p, f.n, flow(f.p, f.n), lo + Math.random() * (hi - lo), 0)); } };
+            scatter(nat, 4600, 1, 0.1, 0.2); scatter(buzz, 3000, 2, 0.045, 0.07);
+            donorMesh = newHairMesh(1500); impMesh = newHairMesh(400);
+            donorUnits = []; vaultHairs = [];
+            let tries = 0;
+            while (donorUnits.length < 650 && tries++ < 20000) {
+                const d = rndDir(); if (zone(d) !== 2) continue;
+                const f = frame(d); if (donorUnits.some(u => u.p.distanceToSquared(f.p) < 0.0025)) continue;
+                const fv = flow(f.p, f.n), r = Math.random(), h = r < 0.35 ? 1 : (r < 0.8 ? 2 : 3), u = { p: f.p, n: f.n, fv, hairs: h, parts: [], ids: [], done: false, idx: donorUnits.length };
+                for (let k = 0; k < h; k++) { const q = makePart(f.p, f.n, fv, 0.075 + Math.random() * 0.02, (k - (h - 1) / 2) * 0.16); u.parts.push(q); u.ids.push(pushHair(donorMesh, q)); }
+                donorUnits.push(u);
+            }
+            // Extraction-site markers (hidden until used) and recipient-site slits (angled with hair direction)
+            exHalo = markerMesh(1, donorUnits.length, 0.5); exPun = markerMesh(1, donorUnits.length, 0.95);
+            const Z0 = new THREE.Matrix4().makeScale(0, 0, 0);
+            for (let i = 0; i < donorUnits.length; i++) { exHalo.setMatrixAt(i, Z0); exPun.setMatrixAt(i, Z0); }
+            siteHalo = markerMesh(1, 60, 0.35); siteSlit = markerMesh(1, 60, 0.95);
+            recipientPoreMeshes = [];
+            for (let i = 0; i < 60; i++) {
+                const r = i % 3, k = Math.floor(i / 3), a = -0.8 + 1.6 * (k + r * 0.33) / 20 + (Math.random() - 0.5) * 0.03;
+                const f = frame(dirOf(a, hairlineEl(a) + r * 0.07 + (Math.random() - 0.5) * 0.025)), fv = flow(f.p, f.n);
+                setMarker(siteHalo, i, f.p, f.n, fv, 0.03, 0.03, 0.003, 0xe0707a);
+                setMarker(siteSlit, i, f.p, f.n, fv, 0.008, 0.022, 0.004, 0xf43f5e);
+                recipientPoreMeshes.push({ userData: { type: 'recipient', id: i, implanted: false, p: f.p, n: f.n, fv } });
+            }
+            headGroup.rotation.y = Math.PI; // face toward default camera, donor scalp on the rear
+            headGroup.updateMatrixWorld(true);
+        }
+
+        // Extraction: follicular unit lifts out, leaving a punctate wound that fades from fresh red to dark.
+        function extractUnit(u) {
+            u.done = true; const t0 = performance.now();
+            anims.push({ t0, dur: 220, f: (t, e) => u.parts.forEach((q, k) => setPart(donorMesh, u.ids[k], q, e * 0.12, 1 - e)) });
+            setMarker(exHalo, u.idx, u.p, u.n, u.fv, 0.024, 0.024, 0.002, 0xc8504f);
+            setMarker(exPun, u.idx, u.p, u.n, u.fv, 0.011, 0.011, 0.003, 0xd01a1a);
+            fxList.push({ i: u.idx, t0 }); vaultHairs.push(u.hairs);
+        }
+        // Implantation: graft descends along the surface normal into the slit; hairs sit at the local flow angle.
+        function plantSite(s) {
+            const d = s.userData; d.implanted = true; const h = vaultHairs.pop() || 1, parts = [], ids = [];
+            for (let k = 0; k < h; k++) { const q = makePart(d.p, d.n, d.fv, 0.1 + Math.random() * 0.03, (k - (h - 1) / 2) * 0.16); parts.push(q); ids.push(pushHair(impMesh, q)); setPart(impMesh, ids[k], q, 0.1, 0.6); }
+            anims.push({ t0: performance.now(), dur: 320, f: (t, e) => parts.forEach((q, k) => setPart(impMesh, ids[k], q, (1 - e) * 0.1, 0.6 + 0.4 * e)) });
+            setMarker(siteSlit, d.id, d.p, d.n, d.fv, 0.006, 0.016, 0.004, 0x6b2323);
+            setMarker(siteHalo, d.id, d.p, d.n, d.fv, 0.02, 0.02, 0.003, 0xb8605f);
+        }
+        function updateFx(now) {
+            anims = anims.filter(a => { const t = Math.min(1, (now - a.t0) / a.dur); a.f(t, t * t * (3 - 2 * t)); return t < 1; });
+            if (!fxList.length) return;
+            fxList = fxList.filter(f => { const k = Math.min(1, (now - f.t0) / 6000); exPun.setColorAt(f.i, new THREE.Color().setRGB(0.82 - 0.4 * k, 0.1 - 0.0 * k, 0.1)); return k < 1; });
+            exPun.instanceColor.needsUpdate = true;
         }
 
         // --- CONTROLS & SURGICAL INTERACTION ---
@@ -619,70 +677,38 @@
                     if (state.currentTool === 'anesthesia') {
                         state.numbingLevel = Math.min(100, state.numbingLevel + 35);
                         audio.playInject();
-                        spawnFloatingText(e.clientX, e.clientY, "NUMBED! 💉", "#38bdf8");
+                        spawnFloatingText(e.clientX, e.clientY, "NUMBED", "#38bdf8");
                         triggerSpeech('happy');
                         updateUI();
-                    } else if (state.currentTool === 'harvest') {
-                        const intersects = raycaster.intersectObjects(donorHairMeshes);
-                        if (intersects.length > 0) {
-                            let hit = intersects[0].object;
-                            while (hit && !hit.userData.type) hit = hit.parent;
-                            if (hit && !hit.userData.extracted) {
-                                hit.userData.extracted = true;
-                                hit.visible = false;
-                                // Store a real follicular unit (shaft + bulb) for transfer to the recipient zone.
-                                const graft = makeTransferGraft(hit.userData.growth || new THREE.Vector3(0,0.2,1));
-                                harvestedGrafts.push(graft);
-                                // Tiny circular FUE punch mark conforming to the curved donor scalp.
-                                const markGeo = new THREE.CircleGeometry(0.012, 12);
-                                const markMat = new THREE.MeshStandardMaterial({ color: 0x875b50, roughness:0.95, side: THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-2 });
-                                const mark = new THREE.Mesh(markGeo, markMat);
-                                mark.position.copy(hit.userData.pos).addScaledVector(hit.userData.norm, 0.002);
-                                mark.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), hit.userData.norm);
-                                mark.userData.isExtractionMark = true; headGroup.add(mark); scalpMarkMeshes.push(mark);
-
-                                state.harvestedVault++;
-                                state.cash += 25;
+                    } else if (state.currentTool === 'harvest' || state.currentTool === 'implant') {
+                        const hit = raycaster.intersectObject(headMesh)[0];
+                        const lp = hit ? headGroup.worldToLocal(hit.point.clone()) : null;
+                        if (state.currentTool === 'harvest') {
+                            let best = null, bd = 0.085;
+                            if (lp) for (const u of donorUnits) { if (u.done) continue; const dd = u.p.distanceTo(lp); if (dd < bd) { bd = dd; best = u; } }
+                            if (best) {
+                                extractUnit(best);
+                                state.harvestedVault++; state.cash += 25;
                                 audio.playPunch(true);
-                                spawnFloatingText(e.clientX, e.clientY, "GRAFT EXTRACTED! ✂️", "#2dd4bf");
+                                spawnFloatingText(e.clientX, e.clientY, "GRAFT EXTRACTED", "#2dd4bf");
                                 applyPain(state.numbingLevel > 20 ? 3 : 20);
                                 updateUI();
+                            } else {
+                                spawnFloatingText(e.clientX, e.clientY, "AIM AT DONOR FOLLICLES", "#94a3b8");
                             }
-                        }
-                    } else if (state.currentTool === 'implant') {
-                        if (state.harvestedVault <= 0) {
-                            audio.playPunch(false);
-                            spawnFloatingText(e.clientX, e.clientY, "HARVEST DONOR BACK FIRST!", "#f43f5e");
-                            return;
-                        }
-
-                        const intersects = raycaster.intersectObjects(recipientPoreMeshes);
-                        if (intersects.length > 0) {
-                            const hit = intersects[0].object;
-                            if (!hit.userData.implanted) {
-                                hit.userData.implanted = true;
-                                hit.material.color.set(0x10b981); // Turn green when planted
-
-                                // Transfer the harvested follicular unit and orient it to the local scalp tangent.
-                                const graft = harvestedGrafts.pop();
-                                if (graft) {
-                                    graft.position.copy(hit.userData.pos).addScaledVector(hit.userData.norm, -0.006);
-                                    const targetGrowth = hit.userData.growth.clone().normalize();
-                                    graft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), targetGrowth);
-                                    graft.userData.isImplantedGraft = true;
-                                    headGroup.add(graft); implantedGraftMeshes.push(graft);
-                                }
-                                hit.material.color.set(0x4f9b75);
-                                // Add a tiny, healed-looking recipient punctum around the graft entry.
-                                const entryGeo = new THREE.CircleGeometry(0.009, 10);
-                                const entry = new THREE.Mesh(entryGeo, new THREE.MeshBasicMaterial({color:0x9d625a, side:THREE.DoubleSide}));
-                                entry.position.copy(hit.userData.pos).addScaledVector(hit.userData.norm, 0.001);
-                                entry.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), hit.userData.norm);
-                                headGroup.add(entry); scalpMarkMeshes.push(entry);
-
+                        } else {
+                            if (state.harvestedVault <= 0) {
+                                audio.playPunch(false);
+                                spawnFloatingText(e.clientX, e.clientY, "HARVEST DONOR BACK FIRST!", "#f43f5e");
+                                return;
+                            }
+                            let best = null, bd = 0.07;
+                            if (lp) for (const s of recipientPoreMeshes) { if (s.userData.implanted) continue; const dd = s.userData.p.distanceTo(lp); if (dd < bd) { bd = dd; best = s; } }
+                            if (best) {
+                                plantSite(best);
                                 state.harvestedVault--;
                                 audio.playPunch(true);
-                                spawnFloatingText(e.clientX, e.clientY, "PLANTED! 🌱", "#34d399");
+                                spawnFloatingText(e.clientX, e.clientY, "PLANTED", "#34d399");
                                 applyPain(state.numbingLevel > 20 ? 3 : 22);
                                 updateUI();
                             }
@@ -694,7 +720,7 @@
             // Preset Camera Buttons
             document.getElementById('cam-face-btn').addEventListener('click', () => setCameraPreset(0, 0.3, 4.8));
             document.getElementById('cam-front-btn').addEventListener('click', () => setCameraPreset(0, 3.2, 2.5));
-            document.getElementById('cam-back-btn').addEventListener('click', () => setCameraPreset(0, 0.25, -4.6));
+            document.getElementById('cam-back-btn').addEventListener('click', () => setCameraPreset(0, 0.35, -4.8));
 
             // Tool Buttons
             document.querySelectorAll('.tool-btn').forEach(btn => {
@@ -836,13 +862,13 @@
             const sweatEl = document.getElementById('sweat-icon');
 
             if (state.patientPain >= 80) {
-                emojiEl.innerText = "😭";
+                emojiEl.className = "fa-solid fa-face-sad-tear text-rose-400";
                 sweatEl.classList.remove('hidden');
             } else if (state.patientPain >= 40) {
-                emojiEl.innerText = "😬";
+                emojiEl.className = "fa-solid fa-face-grimace text-amber-400";
                 sweatEl.classList.remove('hidden');
             } else {
-                emojiEl.innerText = "💪";
+                emojiEl.className = "fa-solid fa-face-smile text-teal-300";
                 sweatEl.classList.add('hidden');
             }
         }
@@ -863,6 +889,7 @@
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
+            updateFx(performance.now());
             renderer.render(scene, camera);
         }
 
@@ -897,7 +924,7 @@
             }
 
             document.getElementById('res-grade').innerText = grade;
-            document.getElementById('res-likes').innerText = `❤️ ${likes}`;
+            document.getElementById('res-likes').innerText = `${likes}`;
             document.getElementById('res-implants').innerText = `${implantedCount} Grafts`;
             document.getElementById('res-satisfaction').innerText = `${Math.round(state.patientSatisfaction)}%`;
             document.getElementById('res-density').innerText = `${Math.min(100, Math.round(ratio * 99))}%`;
