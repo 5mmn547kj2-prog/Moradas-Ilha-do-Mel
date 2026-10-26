@@ -424,8 +424,8 @@
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x070a12);
 
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 0.45, 4.9);
+            camera = new THREE.PerspectiveCamera(27, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 0.24, 6);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
@@ -434,12 +434,12 @@
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.target.set(0, 0.4, 0);
+            controls.target.set(0, 0.24, 0);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.maxPolarAngle = Math.PI / 1.45;
-            controls.minDistance = 2.2;
-            controls.maxDistance = 6.5;
+            controls.minDistance = 3;
+            controls.maxDistance = 9;
 
             // Lighting
             const ambient = new THREE.AmbientLight(0xffffff, 0.65);
@@ -464,8 +464,11 @@
         }
 
         // --- PROCEDURAL 3D HEAD + FOLLICLE SYSTEM ---
-        const C0 = new THREE.Vector3(0, 0.12, 0);
-        let headMesh, hairMat, skinFlat, skinTex, skinCanvas, strandTpl;
+        const C0 = new THREE.Vector3(0, 0.3, 0.1);
+        let litMat, torsoG, torsoMat, earsG, hairHide = [], allHair = [], photoTex = null;
+        let hairPal = [[0.23, 0.14, 0.08], [0.3, 0.19, 0.11], [0.18, 0.11, 0.07], [0.36, 0.24, 0.14]];
+        const pickHair = () => { const c = hairPal[(Math.random() * hairPal.length) | 0], k = 0.85 + 0.3 * Math.random(); return new THREE.Color(Math.min(1, c[0] * k), Math.min(1, c[1] * k), Math.min(1, c[2] * k)); };
+        let neckRGB = [150, 105, 85], neckMat, photoPix, earInnerMat, headMesh, hairMat, skinFlat, skinTex, skinCanvas, strandTpl, shirtCanvas, shirtTex;
         let donorMesh, impMesh, exPun, exHalo, siteSlit, siteHalo;
         let donorUnits = [], vaultHairs = [], anims = [], fxList = [];
         const V = (x, y, z) => new THREE.Vector3(x || 0, y || 0, z || 0);
@@ -474,19 +477,33 @@
         const gau = (a, e, a0, e0, sa, se) => Math.exp(-(((a - a0) / sa) ** 2 + ((e - e0) / se) ** 2));
         const CROWN = V(0, 1, 0.45).normalize();
 
-        // Head surface: ellipsoid cranium + displaced brow, sockets, nose, cheeks, lips, chin, tapered jaw.
+        // Head surface: lofted from real head proportions (about 15 wide x 19 deep x 23 tall), then facial features.
+        const PU = [0, 0.03, 0.07, 0.12, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.78];
+        const PW = [0, 0.22, 0.4, 0.52, 0.61, 0.66, 0.69, 0.71, 0.74, 0.75, 0.74];
+        const PF = [0, 0.78, 0.93, 0.95, 0.95, 0.95, 0.94, 0.94, 0.92, 0.86, 0.8];
+        const PB = [0, 0.18, 0.3, 0.4, 0.5, 0.66, 0.86, 0.98, 1.02, 1.0, 0.95];
+        function cr(arr, u) {
+            let i = 0; while (i < PU.length - 2 && u > PU[i + 1]) i++;
+            const t = (u - PU[i]) / (PU[i + 1] - PU[i]), t2 = t * t, t3 = t2 * t;
+            const p0 = arr[Math.max(i - 1, 0)], p1 = arr[i], p2 = arr[i + 1], p3 = arr[Math.min(i + 2, arr.length - 1)];
+            return 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+        }
         function surf(d) {
             const a = Math.atan2(d.x, -d.z), e = Math.asin(Math.max(-1, Math.min(1, d.y)));
-            const low = sstep(0.05, -0.75, d.y);
-            const rx = 1.1 * (1 - 0.3 * low), ry = 0.98 + 0.4 * sstep(-0.5, 0.5, d.y), rz = 1.22;
-            let s = 0.045 * gau(a, e, 0, 0.5, 0.55, 0.3);
+            const y = 0.12 + d.y * (0.96 + 0.36 * sstep(-0.5, 0.5, d.y));
+            const u = Math.min(1, Math.max(0, (y + 0.84) / 2.28)), uc = Math.min(u, 0.78);
+            const kc = u > 0.78 ? Math.sqrt(Math.max(0, 1 - ((u - 0.78) / 0.22) ** 2)) : 1;
+            let s = 0.05 * gau(a, e, 0, 0.5, 0.5, 0.3);
             for (const k of [-1, 1]) {
-                s += 0.05 * gau(a, e, k * 0.3, 0.2, 0.28, 0.07) - 0.05 * gau(a, e, k * 0.3, 0.1, 0.13, 0.08)
-                   + 0.035 * gau(a, e, k * 0.55, -0.2, 0.3, 0.18) + 0.05 * gau(a, e, k * 0.13, -0.27, 0.07, 0.06);
+                s += 0.06 * gau(a, e, k * 0.4, 0.2, 0.34, 0.07) - 0.05 * gau(a, e, k * 0.42, 0.1, 0.15, 0.08)
+                   + 0.035 * gau(a, e, k * 0.62, -0.12, 0.26, 0.14) - 0.045 * gau(a, e, k * 0.6, -0.45, 0.3, 0.16)
+                   - 0.035 * gau(a, e, k * 1.15, 0.3, 0.3, 0.25) + 0.05 * gau(a, e, k * 0.14, -0.27, 0.06, 0.05);
             }
-            s += 0.17 * gau(a, e, 0, -0.05, 0.09, 0.17) + 0.15 * gau(a, e, 0, -0.27, 0.09, 0.07)
-               + 0.05 * gau(a, e, 0, -0.5, 0.2, 0.05) - 0.03 * gau(a, e, 0, -0.58, 0.15, 0.03) + 0.08 * gau(a, e, 0, -0.72, 0.22, 0.12);
-            return V(C0.x + d.x * (rx + s), C0.y + d.y * (ry + s), C0.z + d.z * (rz + s));
+            s += 0.15 * gau(a, e, 0, -0.15, 0.075, 0.2) + 0.15 * gau(a, e, 0, -0.28, 0.11, 0.075)
+               + 0.055 * gau(a, e, 0, -0.49, 0.22, 0.075) + 0.06 * gau(a, e, 0, -0.65, 0.22, 0.075)
+               - 0.02 * gau(a, e, 0, -0.57, 0.2, 0.035) - 0.03 * gau(a, e, 0, -0.77, 0.16, 0.075) + 0.1 * gau(a, e, 0, -0.95, 0.2, 0.15);
+            const w = (cr(PW, uc) + s) * kc, f = (cr(PF, uc) + s) * kc, b = cr(PB, uc) * kc, ca = Math.cos(a);
+            return V(w * Math.sin(a), y, 0.1 - (ca > 0 ? f : b) * ca);
         }
         // Surface point + smooth normal (finite differences) so every root sits on the true curvature.
         function frame(d) {
@@ -496,7 +513,7 @@
             const t2 = d.clone().cross(t1), h = 0.004;
             const p1 = surf(d.clone().addScaledVector(t1, h).normalize()), p2 = surf(d.clone().addScaledVector(t2, h).normalize());
             const n = V().crossVectors(p1.sub(p), p2.sub(p)).normalize();
-            if (n.dot(d) < 0) n.negate();
+            if (n.dot(p.clone().sub(C0)) < 0) n.negate();
             return { p, n };
         }
         // Natural growth direction: crown whorl at the back, forward-sweeping frontal hair.
@@ -512,19 +529,23 @@
             return v.normalize().applyAxisAngle(n, (Math.random() - 0.5) * 0.35);
         }
         // M-shaped receded hairline and scalp zones (1 native hair, 2 donor, 0 bare).
-        function hairlineEl(a) { const A = Math.abs(a); return 0.74 + 0.14 * Math.exp(-(((A - 0.62) / 0.28) ** 2)) - 0.06 * Math.exp(-((A / 0.18) ** 2)); }
-        function floorEl(a) { const f = hairlineEl(a) + 0.22; return f + (0.15 - f) * sstep(0.85, 1.6, Math.abs(a)); }
+        function hairlineEl(a) { const A = Math.abs(a); return 0.57 + 0.14 * Math.exp(-(((A - 0.62) / 0.28) ** 2)) - 0.06 * Math.exp(-((A / 0.18) ** 2)); }
+        function floorEl(a) { const f = hairlineEl(a) + 0.22; return f + (0.35 - f) * sstep(0.85, 1.4, Math.abs(a)); }
         function zone(d) {
-            const a = Math.atan2(d.x, -d.z), e = Math.asin(d.y);
-            if (Math.abs(a) > 1.9) return e < -0.3 ? 0 : (e < 0.55 ? 2 : 1);
+            const a = Math.atan2(d.x, -d.z), e0 = Math.asin(d.y);
+            const e = e0 + 0.035 * Math.sin(9 * a + 2) + 0.025 * Math.sin(13 * e0 + 4 * a);
+            const A = Math.abs(a) + 0.04 * Math.sin(11 * e0 + 1);
+            if (A >= 1.65) return e < -0.28 ? 0 : (e < 0.5 ? 2 : 1);
+            if (A >= 1.35) return e < 0.22 ? 0 : 1;
+            if (A >= 1.18 && e > -0.15 && e < 0.34) return 3;
             return e > floorEl(a) ? 1 : 0;
         }
         function rndDir() { const z = Math.random() * 2 - 1, a = Math.random() * 6.2832, s = Math.sqrt(1 - z * z); return V(s * Math.cos(a), z, s * Math.sin(a)); }
 
         // Curved, tapered hair strand template (unit length, bends toward +Z).
-        function strandGeo() {
+        function strandGeo(rf) {
             const S = 4, K = 3, p = [], ix = [];
-            for (let j = 0; j <= S; j++) { const t = j / S, r = 0.05 * (1 - 0.75 * t); for (let k = 0; k < K; k++) { const a = k / K * 6.2832; p.push(Math.cos(a) * r, t, t * t * 0.5 + Math.sin(a) * r); } }
+            for (let j = 0; j <= S; j++) { const t = j / S, r = (rf || 0.05) * (1 - 0.75 * t); for (let k = 0; k < K; k++) { const a = k / K * 6.2832; p.push(Math.cos(a) * r, t, t * t * 0.65 + Math.sin(a) * r); } }
             for (let j = 0; j < S; j++) for (let k = 0; k < K; k++) { const a = j * K + k, b = j * K + (k + 1) % K; ix.push(a, a + K, b, b, a + K, b + K); }
             const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setIndex(ix); g.computeVertexNormals(); return g;
         }
@@ -534,17 +555,17 @@
             mesh.setMatrixAt(i, m); mesh.instanceMatrix.needsUpdate = true;
         }
         // One individually oriented hair: angled ~30 deg off the skin along the local flow, fanned within its unit.
-        function makePart(p, n, fv, L, fan) {
-            const dir = n.clone().multiplyScalar(0.5).addScaledVector(fv, 0.85).normalize().applyAxisAngle(n, fan || 0);
-            const Z = fv.clone().addScaledVector(dir, -fv.dot(dir)).normalize(), X = V().crossVectors(dir, Z);
+        function makePart(p, n, fv, L, fan, tw, lift) {
+            const dir = n.clone().multiplyScalar(lift || 0.5).addScaledVector(fv, 0.85).normalize().applyAxisAngle(n, fan || 0);
+            const Z = fv.clone().addScaledVector(dir, -fv.dot(dir)).normalize().applyAxisAngle(dir, tw || 0), X = V().crossVectors(dir, Z);
             return { p: p.clone().addScaledVector(n, -0.004), n, X: X.multiplyScalar(L), Y: dir.multiplyScalar(L), Z: Z.multiplyScalar(L) };
         }
-        function newHairMesh(max) {
-            const m = new THREE.InstancedMesh(strandTpl.clone(), hairMat, max); m.frustumCulled = false; m.setColorAt(0, new THREE.Color(1, 1, 1)); m.count = 0; headGroup.add(m); return m;
+        function newHairMesh(max, geo) {
+            const m = new THREE.InstancedMesh((geo || strandTpl).clone(), hairMat, max); m.frustumCulled = false; m.setColorAt(0, new THREE.Color(1, 1, 1)); m.count = 0; headGroup.add(m); return m;
         }
         function pushHair(m, part) {
             const i = m.count++; setPart(m, i, part, 0, 1);
-            const g = 0.75 + Math.random() * 0.4; m.setColorAt(i, new THREE.Color(g, g, g)); m.instanceColor.needsUpdate = true; return i;
+            m.setColorAt(i, pickHair()); m.instanceColor.needsUpdate = true; return i;
         }
         function setMarker(m, i, p, n, fv, sx, sy, lift, col) {
             const X = V().crossVectors(fv, n).multiplyScalar(sx), Y = fv.clone().multiplyScalar(sy);
@@ -558,43 +579,137 @@
             const m = new THREE.InstancedMesh(new THREE.CircleGeometry(r, 12), mat, n); m.frustumCulled = false; headGroup.add(m); return m;
         }
 
-        // Skin map painted from colours sampled off the reference photo: pores, mottling, downcast eyes, brows, lips, stubble.
-        function paintSkin(skin, hair) {
-            const W = 2048, H = 1024, c = skinCanvas || (skinCanvas = document.createElement('canvas'));
+        // Skin map painted from colours sampled off the reference photo: shading, pores, eyes, brows, lips, stubble.
+        function paintSkin(skin0, hair) {
+            const skin = [Math.min(255, skin0[0] * 1.15) | 0, Math.min(255, skin0[1] * 1.12) | 0, Math.min(255, skin0[2] * 1.1) | 0];
+            const W = 2048, H = 1024, c = document.createElement('canvas');
             c.width = W; c.height = H; const x = c.getContext('2d');
             x.fillStyle = `rgb(${skin[0]},${skin[1]},${skin[2]})`; x.fillRect(0, 0, W, H);
             const XY = (a, e) => { const d = dirOf(a, e); return [((Math.atan2(d.z, -d.x) / 6.2832 + 1) % 1) * W, Math.acos(d.y) / Math.PI * H]; };
+            const blob = (a, e, rw, rh, col, al) => { const [px, py] = XY(a, e); const g = x.createRadialGradient(px, py, 0, px, py, rw); g.addColorStop(0, `rgba(${col},${al})`); g.addColorStop(1, `rgba(${col},0)`); x.save(); x.translate(px, py); x.scale(1, rh / rw); x.translate(-px, -py); x.fillStyle = g; x.beginPath(); x.arc(px, py, rw, 0, 7); x.fill(); x.restore(); };
             for (let i = 0; i < 9000; i++) { x.fillStyle = `rgba(${Math.random() < 0.5 ? '190,90,80' : '120,70,55'},.035)`; x.beginPath(); x.arc(Math.random() * W, Math.random() * H, 6 + Math.random() * 30, 0, 7); x.fill(); }
-            const hc = (f, al) => `rgba(${hair[0] * f | 0},${hair[1] * f | 0},${hair[2] * f | 0},${al})`;
-            for (let i = 0; i < 40000; i++) { const d = rndDir(), z = zone(d); if (!z) continue; const [px, py] = XY(Math.atan2(d.x, -d.z), Math.asin(d.y)); x.fillStyle = hc(0.5, z === 2 ? 0.5 : 0.3); x.fillRect(px, py, 2, 2); }
-            for (let i = 0; i < 45000; i++) { const a = (Math.random() * 2 - 1) * 1.2, e = -0.95 + Math.random() * 0.85; if (e > -0.15 - Math.abs(a) * 0.15 || (Math.abs(a) < 0.2 && e > -0.56 && e < -0.46)) continue; const [px, py] = XY(a, e); x.fillStyle = hc(0.55, 0.45); x.fillRect(px, py, 2, 2); }
+            blob(0, 0.5, 230, 120, '255,225,200', 0.12);
             for (const k of [-1, 1]) {
-                const [ex, ey] = XY(k * 0.3, 0.1);
-                x.fillStyle = 'rgba(60,35,30,.3)'; x.beginPath(); x.ellipse(ex, ey - 4, 52, 26, 0, 0, 7); x.fill();
-                x.save(); x.beginPath(); x.ellipse(ex, ey, 34, 13, 0, 0, 7); x.clip();
-                x.fillStyle = '#d9cfc6'; x.fillRect(ex - 40, ey - 20, 80, 40);
-                x.fillStyle = '#4a2a18'; x.beginPath(); x.arc(ex, ey + 5, 12, 0, 7); x.fill();
-                x.fillStyle = '#120a06'; x.beginPath(); x.arc(ex, ey + 5, 5, 0, 7); x.fill();
-                x.fillStyle = `rgba(${skin[0]},${skin[1]},${skin[2]},.95)`; x.fillRect(ex - 40, ey - 20, 80, 17); x.restore();
-                x.strokeStyle = 'rgba(40,22,15,.6)'; x.lineWidth = 3; x.beginPath(); x.ellipse(ex, ey, 34, 13, 0, Math.PI, 6.2832); x.stroke();
-                for (let i = 0; i < 260; i++) { const t = Math.random(), [px, py] = XY(k * (0.1 + 0.4 * t), 0.265 + 0.05 * Math.sin(t * 2.4) + (Math.random() - 0.5) * 0.035); x.strokeStyle = hc(0.6, 0.6); x.lineWidth = 2; x.beginPath(); x.moveTo(px, py); x.lineTo(px + (Math.random() - 0.5) * 4, py - 5); x.stroke(); }
+                blob(k * 0.42, 0.17, 80, 40, '70,35,30', 0.4);
+                blob(k * 0.42, 0.08, 70, 34, '95,50,45', 0.32);
+                blob(k * 0.42, -0.02, 66, 22, '120,70,70', 0.3);
+                blob(k * 0.17, -0.15, 26, 60, '80,40,35', 0.25);
+                blob(k * 0.27, -0.4, 22, 62, '80,40,35', 0.2);
+                blob(k * 0.62, -0.22, 90, 60, '200,100,90', 0.12);
+                blob(k * 0.6, -0.45, 70, 50, '70,40,35', 0.16);
+                blob(k * 1.15, 0.35, 80, 100, '90,60,50', 0.16);
+            }
+            blob(0, -0.33, 45, 22, '55,22,18', 0.5); blob(0, -0.27, 40, 30, '210,110,100', 0.22); blob(0, -0.62, 50, 18, '80,40,40', 0.25);
+            for (const k of [-1, 1]) { const [nx, ny] = XY(k * 0.1, -0.29); x.fillStyle = 'rgba(40,15,12,.7)'; x.beginPath(); x.ellipse(nx, ny, 8, 4, 0, 0, 7); x.fill(); }
+            const hc = (f, al) => `rgba(${hair[0] * f | 0},${hair[1] * f | 0},${hair[2] * f | 0},${al})`;
+            for (let i = 0; i < 45000; i++) { const d = rndDir(), z = zone(d); if (!z) continue; const [px, py] = XY(Math.atan2(d.x, -d.z), Math.asin(d.y)); x.fillStyle = hc(0.5, z === 2 ? 0.5 : 0.3); x.fillRect(px, py, 2, 2); }
+            for (let i = 0; i < 14000; i++) { const d = rndDir(); if (zone(d) !== 1) continue; const [px, py] = XY(Math.atan2(d.x, -d.z), Math.asin(d.y)); x.fillStyle = hc(0.4, 0.22); x.fillRect(px, py, 4, 4); }
+            for (let i = 0; i < 70000; i++) {
+                const a = (Math.random() * 2 - 1) * 1.4, e = -0.95 + Math.random() * 0.9;
+                if (Math.random() < sstep(1.0, 1.3, Math.abs(a))) continue;
+                if (e > -0.15 - Math.abs(a) * 0.1 || (Math.abs(a) < 0.24 && e > -0.56 && e < -0.44)) continue;
+                if (Math.random() > Math.min(1, 0.3 + (-e - 0.1) * 0.9)) continue;
+                if (Math.abs(a) > 0.5 && e > -0.3 && Math.random() < 0.6) continue;
+                const [px, py] = XY(a, e); x.fillStyle = Math.random() < 0.2 ? 'rgba(165,140,115,.3)' : hc(0.55, 0.5); x.fillRect(px, py, 2, 2);
+            }
+            for (const k of [-1, 1]) {
+                for (let i = 0; i < 380; i++) {
+                    const t = Math.random(), [px, py] = XY(k * (0.17 + 0.5 * t), 0.2 + 0.035 * Math.sin(t * 2.6) + (Math.random() - 0.5) * 0.03 * (1 - 0.5 * t));
+                    x.strokeStyle = hc(0.7, 0.55); x.lineWidth = 2; x.beginPath(); x.moveTo(px, py); x.lineTo(px + k * Math.random() * 5, py - 5 - Math.random() * 3); x.stroke();
+                }
             }
             const [lx, ly] = XY(0, -0.5);
-            x.fillStyle = 'rgba(150,70,70,.5)'; x.beginPath(); x.ellipse(lx, ly, 46, 9, 0, 0, 7); x.fill();
-            x.fillStyle = 'rgba(70,25,25,.7)'; x.fillRect(lx - 40, ly - 1, 80, 3);
-            if (!skinTex) { skinTex = new THREE.CanvasTexture(c); }
+            x.fillStyle = 'rgba(150,80,75,.5)'; x.beginPath(); x.ellipse(lx, ly, 52, 7, 0, 0, 7); x.fill();
+            x.fillStyle = 'rgba(60,22,22,.75)'; x.fillRect(lx - 48, ly - 1, 96, 3);
+            const FW = 3072, FH = 1536, fc = skinCanvas || (skinCanvas = document.createElement('canvas'));
+            fc.width = FW; fc.height = FH; const fx = fc.getContext('2d'); fx.drawImage(c, 0, 0, FW, FH);
+            blendPhoto(fx, FW, FH);
+            if (!skinTex) { skinTex = new THREE.CanvasTexture(fc); }
             skinTex.needsUpdate = true;
         }
-
+        // Projects the reference photo onto the front of the head (eyes, brows, nose, lips, beard, forehead, real hairline).
+        // Fitted from landmarks: eyes at x=385+-105, eye line y=675, nose tip y=830, mouth y=905, chin y=1010 (photo px).
+        function blendPhoto(bx, W, H) {
+            if (!photoPix) return;
+            const sc = photoPix.width / 768;
+            const X0 = Math.floor((0.75 - 1.3 / 6.2832) * W), X1 = Math.ceil((0.75 + 1.3 / 6.2832) * W);
+            const Y0 = Math.floor((0.5 - 1.15 / Math.PI) * H), Y1 = Math.ceil((0.5 + 1.0 / Math.PI) * H);
+            const S = 8, nx = Math.ceil((X1 - X0) / S) + 2, ny = Math.ceil((Y1 - Y0) / S) + 2, L = new Float32Array(nx * ny * 3);
+            for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+                const a = (0.75 - (X0 + i * S) / W) * 6.2832, e = Math.max(-1.55, Math.min(1.55, (0.5 - (Y0 + j * S) / H) * Math.PI));
+                const f = frame(dirOf(a, e)), dz = f.p.z + 6, px = 385 - 2073 * f.p.x / dz, py = 675 - 2000 * (f.p.y - 0.24) / dz;
+                const m = sstep(0.5, 0.82, -f.n.z) * sstep(110, 170, px) * sstep(660, 600, px) * sstep(1060, 1000, py) * sstep(60, 120, py);
+                const k = (j * nx + i) * 3; L[k] = px * sc; L[k + 1] = py * sc; L[k + 2] = m;
+            }
+            const img = bx.getImageData(X0, Y0, X1 - X0, Y1 - Y0), D = img.data, w = img.width, h = img.height, P = photoPix.data, pw = photoPix.width, ph = photoPix.height;
+            for (let y = 0; y < h; y++) {
+                const fj = y / S, j = Math.floor(fj), ty = fj - j;
+                for (let xx = 0; xx < w; xx++) {
+                    const fi = xx / S, i = Math.floor(fi), tx = fi - i;
+                    const k00 = (j * nx + i) * 3, k10 = k00 + 3, k01 = k00 + nx * 3, k11 = k01 + 3;
+                    const w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
+                    const m = L[k00 + 2] * w00 + L[k10 + 2] * w10 + L[k01 + 2] * w01 + L[k11 + 2] * w11;
+                    if (m < 0.01) continue;
+                    const u = L[k00] * w00 + L[k10] * w10 + L[k01] * w01 + L[k11] * w11, v = L[k00 + 1] * w00 + L[k10 + 1] * w10 + L[k01 + 1] * w01 + L[k11 + 1] * w11;
+                    if (u < 0 || v < 0 || u >= pw - 1 || v >= ph - 1) continue;
+                    const iu = u | 0, iv = v | 0, fu = u - iu, fv = v - iv, q = (iv * pw + iu) * 4, o = (y * w + xx) * 4;
+                    for (let c = 0; c < 3; c++) {
+                        const pp = (P[q + c] * (1 - fu) + P[q + 4 + c] * fu) * (1 - fv) + (P[q + pw * 4 + c] * (1 - fu) + P[q + pw * 4 + 4 + c] * fu) * fv;
+                        D[o + c] = D[o + c] * (1 - m) + pp * m;
+                    }
+                }
+            }
+            bx.putImageData(img, X0, Y0);
+        }
+        function paintShirt(skin) {
+            const c = shirtCanvas || (shirtCanvas = document.createElement('canvas')); c.width = 1024; c.height = 512; const x = c.getContext('2d');
+            x.fillStyle = '#3a3b40'; x.fillRect(0, 0, 1024, 512);
+            for (let i = 0; i < 400; i++) { x.fillStyle = Math.random() < 0.5 ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.025)'; x.fillRect(Math.random() * 1024, 0, 1 + Math.random() * 2, 512); }
+            x.fillStyle = `rgb(${skin[0] * 0.95 | 0},${skin[1] * 0.92 | 0},${skin[2] * 0.9 | 0})`;
+            x.beginPath(); x.moveTo(392, 0); x.lineTo(632, 0); x.lineTo(512, 250); x.closePath(); x.fill();
+            x.strokeStyle = '#2c2d31'; x.lineWidth = 18; x.lineJoin = 'round'; x.beginPath(); x.moveTo(392, 0); x.lineTo(512, 250); x.lineTo(632, 0); x.stroke();
+            x.fillStyle = '#d9d9d9'; x.font = 'bold 40px Arial, sans-serif'; x.fillText('PERSONAL', 640, 340); x.fillText('TRAINER', 640, 384);
+            if (!shirtTex) shirtTex = new THREE.CanvasTexture(c);
+            shirtTex.needsUpdate = true;
+        }
         function buildAnatomicalTrainerHead() {
             headGroup = new THREE.Group(); scene.add(headGroup);
             let skinRGB = [201, 150, 126], hairRGB = [61, 35, 20];
-            hairMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(hairRGB[0] / 255, hairRGB[1] / 255, hairRGB[2] / 255), roughness: 0.55 });
-            skinFlat = new THREE.MeshStandardMaterial({ color: new THREE.Color(skinRGB[0] / 255 * 0.9, skinRGB[1] / 255 * 0.9, skinRGB[2] / 255 * 0.9), roughness: 0.8 });
-            const shirt = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.65, 1.35, 32), new THREE.MeshStandardMaterial({ color: 0x3a3f47, roughness: 0.85 }));
-            shirt.position.y = -1.6; headGroup.add(shirt);
-            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.62, 0.8, 32), skinFlat); neck.position.y = -0.85; headGroup.add(neck);
-            for (const k of [-1, 1]) { const ear = new THREE.Mesh(new THREE.SphereGeometry(0.2, 24, 16), skinFlat); ear.scale.set(0.3, 1, 0.65); ear.position.set(k * 1.12, 0.1, 0.08); ear.rotation.z = k * 0.12; headGroup.add(ear); }
+            hairMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55 });
+            skinFlat = new THREE.MeshStandardMaterial({ color: new THREE.Color(skinRGB[0] / 255 * 1.1, skinRGB[1] / 255 * 1.06, skinRGB[2] / 255 * 1.03), roughness: 0.8 });
+            torsoG = new THREE.Group(); headGroup.add(torsoG);
+            // each vertex gets the photo pixel it projects onto from the photo camera; back-facing parts use a fabric/skin pixel
+            const projGeo = (geo, fu, fv) => {
+                geo.computeVertexNormals();
+                const P = geo.attributes.position, N = geo.attributes.normal, uv = geo.attributes.uv;
+                for (let i = 0; i < P.count; i++) {
+                    const dz = P.getZ(i) + 6, u = (385 - 2073 * P.getX(i) / dz) / 768, v = 1 - (675 - 2000 * (P.getY(i) - 0.24) / dz) / 1364;
+                    const k = sstep(0.15, 0.45, -N.getZ(i));
+                    uv.setXY(i, u * k + fu * (1 - k), v * k + fv * (1 - k));
+                }
+                uv.needsUpdate = true; return geo;
+            };
+            torsoMat = new THREE.MeshStandardMaterial({ color: 0x4a4c52, roughness: 0.9, side: THREE.DoubleSide });
+            neckMat = new THREE.MeshStandardMaterial({ color: skinFlat.color.clone().multiplyScalar(0.92), roughness: 0.8 });
+            const prof = [[1.95, -1.5], [1.9, -1.1], [1.78, -0.6], [1.55, -0.3], [1.15, -0.12], [0.8, -0.02], [0.66, 0]].map(q => new THREE.Vector2(q[0], q[1]));
+            const shirtGeo = new THREE.LatheGeometry(prof, 64); shirtGeo.scale(1, 1, 0.55); shirtGeo.translate(0, -1.0, 0.22); projGeo(shirtGeo, 0.104, 0.062);
+            const neckGeo = new THREE.CylinderGeometry(0.55, 0.62, 0.9, 40); neckGeo.translate(0, -0.88, 0.2); projGeo(neckGeo, 0.5, 0.186);
+            torsoG.add(new THREE.Mesh(shirtGeo, torsoMat)); torsoG.add(new THREE.Mesh(neckGeo, neckMat));
+            earInnerMat = new THREE.MeshStandardMaterial({ color: skinFlat.color.clone(), vertexColors: true, side: THREE.DoubleSide, roughness: 0.75 });
+            const makeEar = (k) => {
+                const g = new THREE.PlaneGeometry(1, 1, 24, 32), P = g.attributes.position, col = [];
+                for (let i = 0; i < P.count; i++) {
+                    let u1 = P.getX(i) * 2, v1 = P.getY(i) * 2; const rr = Math.hypot(u1, v1);
+                    if (rr > 1) { u1 /= rr; v1 /= rr; }
+                    const r = Math.min(1, rr), h = 0.045 * (1 - r * r) + 0.04 * Math.exp(-(((r - 0.82) / 0.14) ** 2)) - 0.03 * Math.exp(-((r / 0.38) ** 2));
+                    const lobe = 1 - 0.28 * sstep(0, -1, v1);
+                    P.setXYZ(i, k * (h + 0.02), v1 * 0.26, u1 * 0.15 * lobe);
+                    const sh = 1 - 0.32 * Math.exp(-((r / 0.42) ** 2)); col.push(sh, sh * 0.88, sh * 0.85);
+                }
+                g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals();
+                const m = new THREE.Mesh(g, earInnerMat); m.position.set(k * 0.665, 0.06, 0.22); m.rotation.x = 0.2; return m;
+            };
+            earsG = new THREE.Group(); earsG.add(makeEar(-1)); earsG.add(makeEar(1)); headGroup.add(earsG);
 
             // High-resolution displaced head mesh
             const g = new THREE.SphereGeometry(1, 192, 128), pos = g.attributes.position;
@@ -606,34 +721,58 @@
             const bc = document.createElement('canvas'); bc.width = 1024; bc.height = 512; const bx = bc.getContext('2d');
             bx.fillStyle = '#808080'; bx.fillRect(0, 0, 1024, 512);
             for (let i = 0; i < 50000; i++) { const v = 90 + Math.random() * 80 | 0; bx.fillStyle = `rgb(${v},${v},${v})`; bx.fillRect(Math.random() * 1024, Math.random() * 512, 1.5, 1.5); }
-            headMesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: skinTex, roughness: 0.55, metalness: 0.0, emissive: 0x2a0d08, emissiveIntensity: 0.25 }));
+            litMat = new THREE.MeshStandardMaterial({ map: skinTex, color: 0xb4b4b4, roughness: 0.6, metalness: 0.0, emissive: 0xffffff, emissiveMap: skinTex, emissiveIntensity: 0.5 });
+            headMesh = new THREE.Mesh(g, litMat);
             headGroup.add(headMesh);
 
             // Match skin and hair colour to the reference photo
             const im = new Image();
             im.onload = () => {
                 const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
-                const x = c.getContext('2d'); x.drawImage(im, 0, 0); const W = c.width, H = c.height;
+                const x = c.getContext('2d'); x.drawImage(im, 0, 0); const W = c.width, H = c.height; photoPix = x.getImageData(0, 0, W, H);
                 const avg = (fx, fy, fw, fh) => { const d = x.getImageData(fx * W | 0, fy * H | 0, fw * W | 0, fh * H | 0).data; let r = 0, gg = 0, b = 0; const n = d.length / 4; for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; b += d[i + 2]; } return [r / n | 0, gg / n | 0, b / n | 0]; };
-                skinRGB = avg(0.43, 0.33, 0.17, 0.05); hairRGB = avg(0.40, 0.15, 0.14, 0.04);
-                paintSkin(skinRGB, hairRGB);
-                hairMat.color.setRGB(hairRGB[0] / 255, hairRGB[1] / 255, hairRGB[2] / 255);
-                skinFlat.color.setRGB(skinRGB[0] / 255 * 0.9, skinRGB[1] / 255 * 0.9, skinRGB[2] / 255 * 0.9);
+                skinRGB = avg(0.3, 0.38, 0.4, 0.28); neckRGB = [skinRGB[0] * 0.95 | 0, skinRGB[1] * 0.92 | 0, skinRGB[2] * 0.9 | 0]; hairRGB = avg(0.40, 0.15, 0.14, 0.04);
+                skinFlat.color.setRGB(skinRGB[0] / 255 * 1.1, skinRGB[1] / 255 * 1.06, skinRGB[2] / 255 * 1.03);
+                paintSkin(skinRGB, hairRGB); paintShirt(neckRGB); earInnerMat.color.copy(skinFlat.color);
+                photoTex = new THREE.Texture(im); photoTex.needsUpdate = true;
+                [torsoMat, neckMat].forEach(m => { m.map = photoTex; m.emissiveMap = photoTex; m.emissive.set(0xffffff); m.emissiveIntensity = 0.5; m.color.set(0xb4b4b4); m.needsUpdate = true; });
+                {
+                    const pal = [];
+                    for (let t = 0; t < 1500 && pal.length < 400; t++) {
+                        const q = x.getImageData((W * (0.16 + 0.68 * Math.random())) | 0, (H * (0.08 + 0.2 * Math.random())) | 0, 1, 1).data, r = q[0], g2 = q[1], b2 = q[2];
+                        if (Math.abs(r - g2) < 10 && Math.abs(g2 - b2) < 10) continue;
+                        if (r - b2 < 12 || r + g2 + b2 > 420) continue;
+                        pal.push([Math.min(1, r / 255 * 0.95), Math.min(1, g2 / 255 * 0.95), Math.min(1, b2 / 255 * 0.95)]);
+                    }
+                    if (pal.length > 20) { hairPal = pal; allHair.forEach(m => { for (let i = 0; i < m.count; i++) m.setColorAt(i, pickHair()); m.instanceColor.needsUpdate = true; }); }
+                }
             };
             im.src = PATIENT_PHOTO_DATA;
 
             try {
             // Hair: native (long), donor stubble (trimmed), interactive donor follicular units, implanted grafts
             strandTpl = strandGeo();
-            const nat = newHairMesh(4600), buzz = newHairMesh(3000);
-            const scatter = (m, max, want, lo, hi) => { let tries = 0; while (m.count < max && tries++ < max * 40) { const d = rndDir(); if (zone(d) !== want) continue; const f = frame(d); pushHair(m, makePart(f.p, f.n, flow(f.p, f.n), lo + Math.random() * (hi - lo), 0)); } };
-            scatter(nat, 4600, 1, 0.1, 0.2); scatter(buzz, 3000, 2, 0.045, 0.07);
-            donorMesh = newHairMesh(1500); impMesh = newHairMesh(400);
+            const nat = newHairMesh(12000, strandGeo(0.03)), buzz = newHairMesh(3000), side = newHairMesh(900);
+            const scatter = (m, max, want, lo, hi, jit) => {
+                let tries = 0;
+                while (m.count < max && tries++ < max * 40) {
+                    const d = rndDir(); if (zone(d) !== want) continue;
+                    const f = frame(d), a = Math.atan2(d.x, -d.z), e = Math.asin(d.y);
+                    if (want === 1 && Math.abs(a) < 1.35 && Math.random() > 0.3 + 0.7 * sstep(floorEl(a), floorEl(a) + 0.45, e)) continue; // thin, receded front
+                    // length fades smoothly from trimmed donor stubble up to long top hair; shorter near the hairline
+                    const k = want === 1 ? (Math.abs(a) > 1.35 ? 0.3 + 0.7 * sstep(0.4, 0.9, e) : 0.5 + 0.5 * sstep(floorEl(a), floorEl(a) + 0.35, e)) : 1;
+                    const fv = flow(f.p, f.n).applyAxisAngle(f.n, (Math.random() - 0.5) * (jit || 0));
+                    pushHair(m, makePart(f.p, f.n, fv, (lo + Math.random() * (hi - lo)) * k, 0, want === 1 ? (Math.random() - 0.5) * 2.4 : 0, want === 1 ? 0.2 + Math.random() * 0.35 : 0.5));
+                }
+            };
+            scatter(nat, 12000, 1, 0.22, 0.45, 1.2); scatter(buzz, 3000, 2, 0.045, 0.07, 0.3); scatter(side, 900, 3, 0.03, 0.05, 0.3);
+            hairHide = [nat, side];
+            donorMesh = newHairMesh(1500); impMesh = newHairMesh(400); allHair = [nat, buzz, side, donorMesh, impMesh];
             donorUnits = []; vaultHairs = [];
             let tries = 0;
             while (donorUnits.length < 650 && tries++ < 20000) {
                 const d = rndDir(); if (zone(d) !== 2) continue;
-                const f = frame(d); if (donorUnits.some(u => u.p.distanceToSquared(f.p) < 0.0025)) continue;
+                const f = frame(d); if (donorUnits.some(u => u.p.distanceToSquared(f.p) < 0.0016)) continue;
                 const fv = flow(f.p, f.n), r = Math.random(), h = r < 0.35 ? 1 : (r < 0.8 ? 2 : 3), u = { p: f.p, n: f.n, fv, hairs: h, parts: [], ids: [], done: false, idx: donorUnits.length };
                 for (let k = 0; k < h; k++) { const q = makePart(f.p, f.n, fv, 0.075 + Math.random() * 0.02, (k - (h - 1) / 2) * 0.16); u.parts.push(q); u.ids.push(pushHair(donorMesh, q)); }
                 donorUnits.push(u);
@@ -746,9 +885,9 @@
             });
 
             // Preset Camera Buttons
-            document.getElementById('cam-face-btn').addEventListener('click', () => setCameraPreset(0, 0.3, 4.8));
-            document.getElementById('cam-front-btn').addEventListener('click', () => setCameraPreset(0, 3.2, 2.5));
-            document.getElementById('cam-back-btn').addEventListener('click', () => setCameraPreset(0, 0.35, -4.8));
+            document.getElementById('cam-face-btn').addEventListener('click', () => setCameraPreset(0, 0.24, 6));
+            document.getElementById('cam-front-btn').addEventListener('click', () => setCameraPreset(0, 3.68, 4.9));
+            document.getElementById('cam-back-btn').addEventListener('click', () => setCameraPreset(0, 0.3, -6));
 
             // Tool Buttons
             document.querySelectorAll('.tool-btn').forEach(btn => {
@@ -782,7 +921,7 @@
 
         function setCameraPreset(x, y, z) {
             camera.position.set(x, y, z);
-            controls.target.set(0, 0.4, 0);
+            controls.target.set(0, 0.24, 0);
             controls.update();
         }
 
