@@ -127,7 +127,7 @@
                 <!-- Speech Bubble Quote -->
                 <div class="mt-1">
                     <div class="speech-bubble text-slate-900 leading-tight">
-                        <span id="patient-speech">"Reference patient loaded. Harvest donor follicles, then place grafts along the frontal hairline."</span>
+                        <span id="patient-speech">"Reference patient loaded. Harvest donor follicles, then fill the bald area with grafts. Tap anywhere inside it to add more."</span>
                     </div>
                 </div>
 
@@ -385,7 +385,7 @@
         let state = {
             cash: 1500,
             harvestedVault: 0,
-            targetGrafts: 60,
+            targetGrafts: 150,
             patientSatisfaction: 100,
             patientPain: 0,
             numbingLevel: 100,
@@ -534,6 +534,9 @@
         function hairlineEl(a) { const A = Math.abs(a); return 0.57 + 0.14 * Math.exp(-(((A - 0.62) / 0.28) ** 2)) - 0.06 * Math.exp(-((A / 0.18) ** 2)); }
         const HL_TAB = [0.699, 0.726, 0.766, 0.816, 0.871, 0.926, 0.976, 1.019, 1.053, 1.077, 1.092, 1.099, 1.101, 1.1, 1.098, 1.099, 1.103, 1.11, 1.118, 1.126, 1.132, 1.137, 1.139, 1.14, 1.14, 1.14, 1.139, 1.137, 1.132, 1.126, 1.118, 1.11, 1.103, 1.099, 1.098, 1.1, 1.101, 1.099, 1.092, 1.077, 1.053, 1.019, 0.976, 0.926, 0.871, 0.816, 0.766, 0.726, 0.699];   // hairline elevation of this model, azimuth -1.2 .. 1.2 in steps of 0.05
         function siteEl(a) { const t = (Math.max(-1.2, Math.min(1.2, a)) + 1.2) / 0.05, i = Math.min(HL_TAB.length - 2, Math.floor(t)), f = t - i; return HL_TAB[i] * (1 - f) + HL_TAB[i + 1] * f; }
+        const DH_TAB = [0.75, 0.783, 0.838, 0.905, 0.971, 1.028, 1.078, 1.123, 1.163, 1.193, 1.209, 1.215, 1.212, 1.203, 1.193, 1.189, 1.195, 1.205, 1.214, 1.225, 1.234, 1.238, 1.235, 1.231, 1.23, 1.231, 1.235, 1.238, 1.234, 1.225, 1.214, 1.205, 1.195, 1.189, 1.193, 1.203, 1.212, 1.215, 1.209, 1.193, 1.163, 1.123, 1.078, 1.028, 0.971, 0.905, 0.838, 0.783, 0.75];   // where this model's thick hair starts (azimuth -1.2 .. 1.2, step 0.05)
+        function topEl(a) { const t = (Math.max(-1.2, Math.min(1.2, a)) + 1.2) / 0.05, i = Math.min(DH_TAB.length - 2, Math.floor(t)), f = t - i; return DH_TAB[i] * (1 - f) + DH_TAB[i + 1] * f + 0.13; } // top edge of the bald / thinning area
+        function botEl(a) { return Math.max(0.62, siteEl(a) - 0.315); } // front edge of the recipient area
         function napeEl(A) { return A < 2.0 ? -0.05 - (A - 1.65) * 0.4 : (A < 2.25 ? -0.19 - (A - 2.0) * 2.24 : -0.75); }
         function floorEl(a) { const f = hairlineEl(a) + 0.22; return f + (0.35 - f) * sstep(0.85, 1.4, Math.abs(a)); }
         function zoneAE(a, e0) {
@@ -773,14 +776,17 @@
             exHalo = markerMesh(1, donorUnits.length, 0.5); exPun = markerMesh(1, donorUnits.length, 0.95);
             const Z0 = new THREE.Matrix4().makeScale(0, 0, 0);
             for (let i = 0; i < donorUnits.length; i++) { exHalo.setMatrixAt(i, Z0); exPun.setMatrixAt(i, Z0); exHalo.setColorAt(i, new THREE.Color(0xc8504f)); exPun.setColorAt(i, new THREE.Color(0xd01a1a)); }
-            siteHalo = markerMesh(1, 60, 0.35); siteSlit = markerMesh(1, 60, 0.95);
+            siteHalo = markerMesh(1, 560, 0.35); siteSlit = markerMesh(1, 560, 0.95); siteHalo.count = 0; siteSlit.count = 0;
             recipientPoreMeshes = [];
-            for (let i = 0; i < 60; i++) {
-                const r = i % 3, k = Math.floor(i / 3), a = -0.95 + 1.9 * (k + r * 0.33) / 20 + (Math.random() - 0.5) * 0.03;
-                const f = frame(dirOf(a, siteEl(a) - 0.07 - r * 0.08 + (Math.random() - 0.5) * 0.02)), fv = flow(f.p, f.n);
-                setMarker(siteHalo, i, f.p, f.n, fv, 0.03, 0.03, 0.003, 0xe0707a);
-                setMarker(siteSlit, i, f.p, f.n, fv, 0.008, 0.022, 0.004, 0xf43f5e);
-                recipientPoreMeshes.push({ userData: { type: 'recipient', id: i, implanted: false, p: f.p, n: f.n, fv } });
+            // guide slits fill the whole bald / thinning area: staggered rows that follow the receded hairline, from the front edge up to the thick hair, out to both temple corners
+            for (let k = 0; k < 26; k++) {
+                for (let r = 0; r < 12; r++) {
+                    const a = -1.12 + 2.24 * (k + (r % 2) * 0.5) / 25 + (Math.random() - 0.5) * 0.015;
+                    if (Math.abs(a) > 1.12) continue;
+                    const e = topEl(a) - 0.02 - r * 0.06 + (Math.random() - 0.5) * 0.012;
+                    if (e < botEl(a)) break;
+                    addSite(a, e);
+                }
             }
             } catch (err) { window.showErr('HAIR BUILD: ' + err.message); }
             window.buildInfo = 'built: units=' + donorUnits.length + ' sites=' + recipientPoreMeshes.length;
@@ -797,6 +803,16 @@
             fxList.push({ i: u.idx, t0 }); vaultHairs.push(u.hairs);
         }
         // Implantation: graft descends along the surface normal into the slit; hairs sit at the local flow angle.
+        function addSiteD(d) {
+            const i = siteSlit.count; if (i >= 560) return null;
+            const f = frame(d), fv = flow(f.p, f.n);
+            setMarker(siteHalo, i, f.p, f.n, fv, 0.03, 0.03, 0.003, 0xe0707a);
+            setMarker(siteSlit, i, f.p, f.n, fv, 0.008, 0.022, 0.004, 0xf43f5e);
+            siteHalo.count = siteSlit.count = i + 1;
+            const site = { userData: { type: 'recipient', id: i, implanted: false, p: f.p, n: f.n, fv } };
+            recipientPoreMeshes.push(site); return site;
+        }
+        function addSite(a, e) { return addSiteD(dirOf(a, e)); }
         function plantSite(s) {
             const d = s.userData; d.implanted = true; const h = vaultHairs.pop() || 1, parts = [], ids = [];
             for (let k = 0; k < h; k++) { const q = makePart(d.p, d.n, d.fv, 0.1 + Math.random() * 0.03, (k - (h - 1) / 2) * 0.16); parts.push(q); ids.push(pushHair(impMesh, q)); setPart(impMesh, ids[k], q, 0.1, 0.6); }
@@ -915,6 +931,13 @@
                             }
                             let best = null, bd = 0.07;
                             if (lp) for (const s of recipientPoreMeshes) { if (s.userData.implanted) continue; const dd = s.userData.p.distanceTo(lp); if (dd < bd) { bd = dd; best = s; } }
+                            if (!best && lp) {
+                                const dd = lp.clone().sub(C0).normalize(), aa = Math.atan2(dd.x, -dd.z), ee = Math.asin(dd.y);
+                                if (Math.abs(aa) < 1.2 && ee > botEl(aa) - 0.03 && ee < topEl(aa) + 0.03) {
+                                    let near = false; for (const s2 of recipientPoreMeshes) if (s2.userData.p.distanceTo(lp) < 0.04) { near = true; break; }
+                                    if (!near) best = addSiteD(dd);
+                                } else spawnFloatingText(e.clientX, e.clientY, "TAP INSIDE THE BALD AREA", "#94a3b8");
+                            }
                             if (best) {
                                 plantSite(best);
                                 state.harvestedVault--;
