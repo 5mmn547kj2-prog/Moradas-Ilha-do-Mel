@@ -574,12 +574,13 @@
         const MODELS = {
             head: {
                 key: 'head', label: 'Cabeça 1', files: ['head.glb?v=3', 'Meshy_AI_Quiet_Resolve_1029190538_texture.glb'], idbKey: 'glb',
-                R: HF_R_B64, HL: HL_TAB_1, DH: DH_TAB_1, napeFloor: -0.75,
+                R: HF_R_B64, HL: HL_TAB_1, DH: DH_TAB_1, napeFloor: -0.75, leftLift: 0, leftExt: 0,
                 scale: 2.28 / (0.45 - 0.055), pos: (s) => [0, -0.055 * s - 0.84, 0.035 * s + 0.1]
             },
             head2: {
-                key: 'head2', label: 'Cabeça 2', files: ['head2.glb?v=1'], idbKey: 'glb_head2',
+                key: 'head2', label: 'Cabeça 2', files: ['head2.glb?v=2'], idbKey: 'glb_head2',
                 R: HF_R2_B64, HL: HL_TAB_2, DH: DH_TAB_2, napeFloor: -0.30, // doadora termina acima do colarinho da head2
+                leftLift: 0.12, leftExt: 0.12, // lado esquerdo da tela (a > 0): área sobe e avança mais, seguindo a linha do cabelo da head2
                 scale: 2.28 / (0.3767 + 0.035), pos: (s) => [-0.072, -0.84 + 0.035 * s, 0.11 + 0.039 * s]
             }
         };
@@ -587,7 +588,7 @@
         function applyModel(m) {
             ACTIVE = m; hfR = new Uint16Array(b64u(m.R).buffer); HL_TAB = m.HL; DH_TAB = m.DH;
         }
-        function topEl(a) { const t = (Math.max(-1.2, Math.min(1.2, a)) + 1.2) / 0.05, i = Math.min(DH_TAB.length - 2, Math.floor(t)), f = t - i; return DH_TAB[i] * (1 - f) + DH_TAB[i + 1] * f + 0.13; } // top edge of the bald / thinning area
+        function topEl(a) { const t = (Math.max(-1.2, Math.min(1.2, a)) + 1.2) / 0.05, i = Math.min(DH_TAB.length - 2, Math.floor(t)), f = t - i; return DH_TAB[i] * (1 - f) + DH_TAB[i + 1] * f + 0.13 + ACTIVE.leftLift * sstep(0.15, 0.9, a); } // top edge of the bald / thinning area
         function botEl(a) { return Math.max(0.6, siteEl(a) - 0.52); } // front edge of the recipient area
         function napeEl(A) { return Math.max(ACTIVE.napeFloor, A < 2.0 ? -0.05 - (A - 1.65) * 0.4 : (A < 2.25 ? -0.19 - (A - 2.0) * 2.24 : -0.75)); }
         function floorEl(a) { const f = hairlineEl(a) + 0.22; return f + (0.35 - f) * sstep(0.85, 1.4, Math.abs(a)); }
@@ -831,10 +832,10 @@
             siteHalo = markerMesh(1, 560, 0.35); siteSlit = markerMesh(1, 560, 0.95); siteHalo.count = 0; siteSlit.count = 0;
             recipientPoreMeshes = [];
             // guide slits fill the whole bald / thinning area: staggered rows that follow the receded hairline, from the front edge up to the thick hair, out to both temple corners
-            for (let k = 0; k < 26; k++) {
+            for (let k = 0; k < 26 + Math.round(ACTIVE.leftExt / 0.0896); k++) {
                 for (let r = 0; r < 16; r++) {
-                    const a = -1.12 + 2.24 * (k + (r % 2) * 0.5) / 25 + (Math.random() - 0.5) * 0.015;
-                    if (Math.abs(a) > 1.12) continue;
+                    const a = -1.12 + 0.0896 * (k + (r % 2) * 0.5) + (Math.random() - 0.5) * 0.015;
+                    if (a < -1.12 || a > 1.12 + ACTIVE.leftExt) continue;
                     const e = topEl(a) - 0.02 - r * 0.06 + (Math.random() - 0.5) * 0.012;
                     if (e < botEl(a)) break;
                     addSite(a, e);
@@ -988,7 +989,7 @@
                             if (lp) for (const s of recipientPoreMeshes) { if (s.userData.implanted) continue; const dd = s.userData.p.distanceTo(lp); if (dd < bd) { bd = dd; best = s; } }
                             if (!best && lp) {
                                 const dd = lp.clone().sub(C0).normalize(), aa = Math.atan2(dd.x, -dd.z), ee = Math.asin(dd.y);
-                                if (Math.abs(aa) < 1.2 && ee > botEl(aa) - 0.03 && ee < topEl(aa) + 0.03) {
+                                if (aa > -1.2 && aa < 1.2 + ACTIVE.leftExt && ee > botEl(aa) - 0.03 && ee < topEl(aa) + 0.03) {
                                     let near = false; for (const s2 of recipientPoreMeshes) if (s2.userData.p.distanceTo(lp) < 0.04) { near = true; break; }
                                     if (!near) best = addSiteD(dd);
                                 } else spawnFloatingText(e.clientX, e.clientY, "TOQUE DENTRO DA ÁREA CALVA", "#94a3b8");
